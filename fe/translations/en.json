@@ -1,0 +1,19 @@
+{
+  "Common": {
+    "connect-wallet": "Connect Wallet",
+    "currency": "Currency",
+    "search-networks": "Search Networks",
+    "help-info": "Strive not to be a success, but rather to be of value",
+    "networks": "Networks",
+    "trade": "Trade",
+    "add-to-metamask": "Add to Metamask",
+    "add-to-imToken": "Add to imToken",
+    "add-to-wallet": "Add to Wallet",
+    "add-to-brave": "Add to Brave",
+    "add-to-coinbase": "Add to Coinbase Wallet",
+    "add-to-trust": "Add to Trust Wallet",
+    "add-to-taho": "Add to Taho",
+    "add-to-xdefi": "Add to XDEFI",
+    "no-privacy-info": "No privacy info"
+  }
+}
