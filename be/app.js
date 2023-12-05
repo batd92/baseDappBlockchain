@@ -3,6 +3,12 @@ const PcSwapFactory = require('./functionality/factory');
 const PcSwapPair = require('./functionality/pair');
 const Helper = require('./functionality/helper');
 
+(async () => {
+  const pairAddress = await Helper.h_getLimitedPairsGraphql();
+  console.log(pairAddress);
+
+})();
+
 const io = require("socket.io")(httpServer, {
   cors: {
     origin: "*",

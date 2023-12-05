@@ -10,3 +10,10 @@ Use browser developer tools for websocket connection and sending messages:
 1. `ws = new WebSocket('ws://localhost:3000')`
 1. `ws.send('Hello')`
 1. See network tab for messages
+
+Ref: https://github.com/joshstevens19/simple-pancakeswap-sdk/tree/master
+https://github.com/Uniswap/v2-sdk
+https://github.com/pancakeswap/pancake-smart-contracts/blob/master/projects/exchange-protocol/data/abi/contracts/PancakePair.sol/PancakePair.json
+
+https://docs.nodereal.io/reference/pancakeswap-graphql-api
+

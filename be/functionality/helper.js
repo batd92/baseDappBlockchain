@@ -1,5 +1,7 @@
 const ABI = require('../abis');
 const { coinList } = require('../functionality/constants');
+const schema = require('../graphql/schema')
+const graphql = require('../graphql/index')
 
 const {
     w_getWeb3InstanceHTTP,
@@ -71,7 +73,25 @@ async function h_getPrice(reserves, token0, token1, slippageTolerance = 0.5) {
             timestamp
         }
     } catch (error) {
-        console.error("Error:", error);
+        console.error("h_getPrice:", error);
+    }
+}
+
+async function h_getLimitedPairsGraphql(limit = 100) {
+    try {
+        return await graphql.g_queryNodereal(await schema.s_getPairs());        
+    } catch (error) {
+        console.error('h_getLimitedPairsGraphql:', error.message);
+        return null;
+    }
+}
+
+async function h_getPairGraphql(token0, token1) {
+    try {
+        return await graphql.g_queryNodereal(await schema.s_getPair(token0, token1));        
+    } catch (error) {
+        console.error('h_getPairGraphql:', error.message);
+        return null;
     }
 }
 
@@ -81,4 +101,6 @@ module.exports = {
     h_getTokensPair,
     h_setContract,
     h_getPrice,
+    h_getLimitedPairsGraphql,
+    h_getPairGraphql
 }
