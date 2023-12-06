@@ -102,7 +102,7 @@ function Contract({ lang, data }) {
           </div>
           { 
             (
-              (Object.keys(token0).length > 0 && Object.keys(token1).length > 0 && Object.keys(price).length > 0) 
+              (token0 && Object.keys(token0).length > 0 && token1 && Object.keys(token1).length > 0 && price && Object.keys(price).length > 0) 
                 &&
               <Ratio token1={token1} token0={token0} price={price} />
             )

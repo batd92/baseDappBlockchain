@@ -3,10 +3,15 @@ const PcSwapFactory = require('./functionality/factory');
 const PcSwapPair = require('./functionality/pair');
 const Helper = require('./functionality/helper');
 
+// init system
 (async () => {
-  const pairAddress = await Helper.h_getLimitedPairsGraphql();
-  console.log(pairAddress);
-
+  const LoadGraphql = true;
+  if (LoadGraphql) {
+    // get top pair address.
+    await Helper.h_loadTopPairsByGraphql();
+  }
+  // Load and Push data on Redis
+  await Helper.h_loadTokenByGraphql();
 })();
 
 const io = require("socket.io")(httpServer, {
@@ -15,10 +20,7 @@ const io = require("socket.io")(httpServer, {
     methods: ["GET", "POST"]
   }
 });
-io.on('connection', client => {
-  client.on('event', data => { /* … */ });
-  client.on('disconnect', () => { /* … */ });
-});
+
 httpServer.listen(9001);
 
 io.on("connection", function (socket) {
@@ -43,7 +45,6 @@ async function app_getPrice(socket, query) {
   const pairAddress = await PcSwapFactory.f_getPairs(token0, token1);
   const reserves = await PcSwapPair.p_getReserves(pairAddress);
   const price = await Helper.h_getPrice(reserves, token0, token1);
-  console.log('API h_getPrice: ', token0, token1);
   socket.emit('h_getPrice', JSON.stringify({
     token0,
     token1,

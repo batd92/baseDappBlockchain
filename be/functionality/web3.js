@@ -59,7 +59,9 @@ let wsProvider = null;
 // Hàm trả về instance của web3, tạo mới nếu chưa tồn tại
 const w_getWeb3InstanceWSS = () => {
     if (!web3InstanceWSS) {
-        wsProvider = new WebSocketProvider('wss://bsc.publicnode.com', optionsWSS);
+        if (!wsProvider) {
+            wsProvider = new WebSocketProvider('wss://bsc.publicnode.com', optionsWSS);
+        }
         web3InstanceWSS = new Web3(wsProvider);
     }
     return web3InstanceWSS;
@@ -68,9 +70,24 @@ const w_getWeb3InstanceWSS = () => {
 const w_getWsProviderWSS = () => {
     if (!wsProvider) {
         wsProvider = new WebSocketProvider('wss://bsc.publicnode.com', optionsWSS);
+        wsProvider.setMaxListeners(15);
     }
+    wsProvider.on('error', (err) => {
+        console.error('WebSocket connection error:', err);
+        if (!wsProvider.reconnecting) {
+            w_getWeb3InstanceWSS();
+        }
+    });
+    
+    wsProvider.on('end', (event) => {
+        console.log('WebSocket connection closed:', event);
+        if (!wsProvider.reconnecting) {
+            w_getWeb3InstanceWSS();
+        }
+      });
     return wsProvider;
 };
+
 
 // Xuất hàm để có thể sử dụng ở nơi khác trong ứng dụng
 module.exports = {

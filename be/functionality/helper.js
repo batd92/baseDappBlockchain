@@ -1,7 +1,6 @@
 const ABI = require('../abis');
 const { coinList } = require('../functionality/constants');
-const schema = require('../graphql/schema')
-const graphql = require('../graphql/index')
+const graphql = require('../graphql/index');
 
 const {
     w_getWeb3InstanceHTTP,
@@ -12,19 +11,15 @@ const {
     r_getRedis
 } = require('./redis');
 
-
-
 // instance của web3
 const web3_http = w_getWeb3InstanceHTTP();
 const web3_wss = w_getWeb3InstanceWSS();
-
-
 
 async function h_getTokenByAddress(token) {
 
     try {
         let token0 = JSON.parse(await r_getRedis().get(token.toString())) || {};
-        if (!token0) {
+        if (Object.keys(token0).length === 0) {
             const contract = new web3_http.eth.Contract(ABI.getABIToken(), token);
             token0 = {
                 address: token,
@@ -77,30 +72,39 @@ async function h_getPrice(reserves, token0, token1, slippageTolerance = 0.5) {
     }
 }
 
-async function h_getLimitedPairsGraphql(limit = 100) {
-    try {
-        return await graphql.g_queryNodereal(await schema.s_getPairs());        
-    } catch (error) {
-        console.error('h_getLimitedPairsGraphql:', error.message);
-        return null;
+// using get and push data when init system
+async function h_loadTopPairsByGraphql() {
+    const response = await graphql.h_getLimitedPairsGraphql(100);
+    if (response && response.pairs) {
+        const pairs = response.pairs;
+        for (let index = 0; index < pairs.length; index++) {
+            const pair = pairs[index];
+            const key = `${pair.token0.id}-${pair.token1.id}`
+            await (r_getRedis().set(key, JSON.stringify(pair)));
+        }
     }
+    return;
 }
 
-async function h_getPairGraphql(token0, token1) {
-    try {
-        return await graphql.g_queryNodereal(await schema.s_getPair(token0, token1));        
-    } catch (error) {
-        console.error('h_getPairGraphql:', error.message);
-        return null;
-    }
-}
+// using get and push data when init system
+async function h_loadTokenByGraphql() {
 
+    const keys = Object.keys(coinList);
+    for (let index = 0; index < keys.length; index++) {
+        const response = await graphql.h_getTokenGraphql(coinList[keys[index]]);
+        if (response.token) {
+            const key = `${response.token.id}`
+            await (r_getRedis().set(key, JSON.stringify(response.token)));
+        }
+    }
+    return;
+}
 
 module.exports = {
     h_getTokenByAddress,
     h_getTokensPair,
     h_setContract,
     h_getPrice,
-    h_getLimitedPairsGraphql,
-    h_getPairGraphql
+    h_loadTopPairsByGraphql,
+    h_loadTokenByGraphql
 }
