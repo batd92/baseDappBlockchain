@@ -2,45 +2,49 @@ import React, { useEffect, useState } from 'react';
 import { notTranslation as useTranslations } from "../../utils";
 import Ratio from "../ratio";
 import u_Socket from "../../utils/wss";
-const addressWBNB = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
+const WBNB = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 
 function Contract({ lang, data }) {
 
   const t = useTranslations('Common', lang);
-  const [contractInput, setContractInput] = useState('');
+  const [contractInput, setContractInput] = useState('0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82');
 
-  const [price, setPrice] = useState({});
-  const [token0, setToken0] = useState({});
-  const [token1, setToken1] = useState({});
+  const [price, setPriceSwap] = useState({});
+  const [token0, setFirstToken] = useState({});
+  const [token1, setLastToken] = useState({});
   const socket = u_Socket();
 
-  socket.on("h_getPrice", (data) => {
+  socket.on("app_getToken", (data) => {
     try {
-      console.log('___ Reciver h_getPrice ___');
-      const { token0, token1, price } = JSON.parse(data);
-      setToken0(token0);
-      setToken1(token1);
-      setPrice(price);
+      console.log(' [app_getToken] ');
+      const { token0, token1, id } = JSON.parse(data);
+      setFirstToken(token0);
+      setLastToken(token1);
     } catch (error) {
       console.log('h_getPrice error: ', error);
     }
   });
 
+  socket.on("app_getPrice", (data) => {
+    try {
+      console.log(' [app_getPrice] ');
+      const response = JSON.parse(data);
+      setPriceSwap(response);
+    } catch (error) {
+      console.log('h_getPrice error: ', error);
+    }
+  });
+
+
   useEffect(() => {
-    if (!(/^0x[0-9a-fA-F]+$/).test(contractInput) || contractInput === addressWBNB) {
-      setToken0({});
-      setToken1({});
-      setPrice({});
+    if (!(/^0x[0-9a-fA-F]+$/).test(contractInput) || contractInput === WBNB) {
+      setFirstToken({});
+      setLastToken({});
       return;
     };
     const intervalId = setInterval(() => {
-      console.log('___ Emit check_h_getPrice ___');
-      socket.emit('check_h_getPrice', JSON.stringify(
-        {
-          address_token0: addressWBNB,
-          address_token1: contractInput,
-        }
-      ));
+      console.log(' [check_h_getPrice] ');
+      socket.emit('check_h_getPrice', JSON.stringify([WBNB, contractInput]));
     }, 5000);
 
     return () => clearInterval(intervalId);
@@ -48,12 +52,9 @@ function Contract({ lang, data }) {
 
   const enterKeyPress = (e) => {
     if (e.key === 'Enter') {
-      socket.emit('check_h_getPrice', JSON.stringify(
-        {
-          address_token0: addressWBNB,
-          address_token1: contractInput,
-        }
-      ));
+      console.log(' [check_h_Token] ');
+      socket.emit('check_h_Token', JSON.stringify([WBNB, contractInput]));
+      socket.emit('check_h_getMint', JSON.stringify([WBNB, contractInput]));
     }
   };
 
@@ -67,7 +68,7 @@ function Contract({ lang, data }) {
               <h6 class="text-lg font-bold dark:text-white">BNN Chain</h6>
               </span>
               <input
-                value={addressWBNB}
+                value={WBNB}
                 readOnly
                 className="dark:bg-[#0D0D0D] bg-white dark:text-[#B3B3B3] text-blue-600 flex-1 px-3 sm:px-2 pb-4 pt-2 sm:py-4 outline-none"
               />

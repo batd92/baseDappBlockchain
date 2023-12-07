@@ -1,26 +1,26 @@
 // get abi factory
-function getABIFactory() {
-    return require('../be/abi/factory_v2.json');
+function getPancakeFactory() {
+    return require('../be/abi/PancakeFactory.json');
 }
 
 // get abi router
-function getABIRouter() {
-    return require('../be/abi/router_v2.json');
+function getPancakeRouter() {
+    return require('../be/abi/PancakeRouter.json');
 }
 
 // get abi liquidity
-function getABILiquidity() {
-    return require('../be/abi/liquidity_v2.json');
+function getPancakePair() {
+    return require('../be/abi/PancakePair.json');
 }
 
 // get abi token on pancake swap
-function getABIToken() {
-    return require('../be/abi/token.json');
+function getABITokenERC20() {
+    return require('../be/abi/PancakeERC20.json');
 }
 
 module.exports = {
-    getABIFactory,
-    getABILiquidity,
-    getABIRouter,
-    getABIToken
+    getPancakeFactory,
+    getPancakePair,
+    getABITokenERC20,
+    getPancakeRouter
 }

@@ -5,13 +5,16 @@ const Helper = require('./functionality/helper');
 
 // init system
 (async () => {
-  const LoadGraphql = true;
+  const LoadGraphql = false;
   if (LoadGraphql) {
     // get top pair address.
     await Helper.h_loadTopPairsByGraphql();
   }
   // Load and Push data on Redis
-  await Helper.h_loadTokenByGraphql();
+  // await Helper.h_loadTokenByGraphql();
+  await PcSwapPair.p_checkMintEvent('0x0eD7e52944161450477ee417DE9Cd3a859b14fD0');
+  await PcSwapPair.p_checkSwap('0x0eD7e52944161450477ee417DE9Cd3a859b14fD0');
+  await PcSwapFactory.f_checkPairCreated();
 })();
 
 const io = require("socket.io")(httpServer, {
@@ -21,40 +24,66 @@ const io = require("socket.io")(httpServer, {
   }
 });
 
+io.setMaxListeners(15); // Adjust the number based on your needs
 httpServer.listen(9001);
 
 io.on("connection", function (socket) {
-  console.log("------- Made socket connection ----- ");
+  console.log("------- Made socket connection -----");
+  // check token
+  socket.on('check_h_Token', async function (params) {
+    const connections = io.sockets.sockets;
+    console.log("The number of connections: ", Object.keys(connections).length);
+    await app_getToken(socket, params);
+  });
+
   // check price
   socket.on('check_h_getPrice', async function (params) {
-    const query = JSON.parse(params);
-    await app_getPrice(socket, query);
+    const connections = io.sockets.sockets;
+    console.log("The number of connections: ", Object.keys(connections).length);
+    await app_getPrice(socket, params);
+  });
+
+  // check mint token (block)
+  socket.on('check_h_getMint', async function (params) {
+    const connections = io.sockets.sockets;
+    console.log("The number of connections: ", Object.keys(connections).length);
+    await app_checkMint(socket, params);
   });
 
 });
 
-async function app_getPrice(socket, query) {
-  const { address_token0, address_token1 } = query;
-  if (!address_token0 || !address_token1) return res.send(JSON.stringify({}));
 
-  // token A
-  const token0 = await Helper.h_getTokenByAddress(address_token0);
-  // token B
-  const token1 = await Helper.h_getTokenByAddress(address_token1);
+// get info token
+async function app_getToken(socket, params) {
+  try {
+    const query = JSON.parse(params || '');
+    const response = await PcSwapFactory.f_getPairs(query);
+    socket.emit('app_getToken', JSON.stringify(response));
+  } catch (error) {
+    console.log('[app_getToken]: ', error);
+  }
+}
 
-  const pairAddress = await PcSwapFactory.f_getPairs(token0, token1);
-  const reserves = await PcSwapPair.p_getReserves(pairAddress);
-  const price = await Helper.h_getPrice(reserves, token0, token1);
-  socket.emit('h_getPrice', JSON.stringify({
-    token0,
-    token1,
-    price
-  }));
-  const date = new Date().toLocaleString('en-GB', {
-    hour12: false,
-  });
-  socket.emit('h_getLogs', JSON.stringify({
-    message: `Adjusts the gas price (transaction fee) for your transaction. Higher GWEI = higher speed = higher fees.`,
-    time: date
-  }));
+// get price token
+async function app_getPrice(socket, params) {
+  try {
+    const query = JSON.parse(params || '');
+    const pair = await PcSwapFactory.f_getPairs(query);
+    const reserves = await PcSwapPair.p_getReserves(pair.id);
+    const price = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
+    socket.emit('app_getPrice', JSON.stringify(price));
+  } catch (error) {
+    console.log('[app_getPrice]: ', error);
+  }
+}
+
+// check mint pair address
+async function app_checkMint(socket, params) {
+  try {
+    const query = JSON.parse(params || '');
+    const pair = await PcSwapFactory.f_getPairs(query);
+    await PcSwapPair.p_checkMintEvent(pair.id);
+  } catch (error) {
+    console.log('[app_checkMint]: ', error);
+  }
 }

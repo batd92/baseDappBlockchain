@@ -17,10 +17,10 @@ const wsProvider = w_getWsProviderWSS();
 // check mint pool on pair
 async function p_checkMintEvent(pairAddress) {
     try {
-        const liquidityPool = new web3_wss.eth.Contract(ABI.getABILiquidity(), pairAddress);
+        const liquidityPool = new web3_wss.eth.Contract(ABI.getPancakePair(), pairAddress);
         console.log("--------------------------");
-        console.log("Listening to Mint() with last block: " + fromBlockNumber);
-
+        const currentBlockNumber = await web3_wss.eth.getBlockNumber();
+        console.log("Listening to Mint() with last block: " + currentBlockNumber, ' with pair address: ', pairAddress);
         liquidityPool.on('Mint', async (data) => {
             console.log(`
                 =================
@@ -29,18 +29,19 @@ async function p_checkMintEvent(pairAddress) {
             `);
         });
     } catch (error) {
-        
+        console.log('[p_checkMintEvent] ', error);
     }
 }
 
 // check swap pool on pair
 async function p_checkSwap(pairAddress) {
     try {
-        const liquidityPool = new web3_wss.eth.Contract(ABI.getABILiquidity(), pairAddress);
+        const liquidityPool = new web3_wss.eth.Contract(ABI.getPancakePair(), pairAddress);
         console.log("--------------------------");
-        console.log("Listening to Swap() with last block: " + fromBlockNumber);
+        const currentBlockNumber = await web3_wss.eth.getBlockNumber();
+        console.log("Listening to Swap() with last block: " + currentBlockNumber, ' with pair address: ', pairAddress);
 
-        liquidityPool.on('Swap', async (data) => {
+        liquidityPool.on('swap', async (data) => {
             console.log(`
                 =================
                 data: ${data}
@@ -56,10 +57,10 @@ async function p_checkSwap(pairAddress) {
 // check burn pool on pair
 async function p_checkBurn(pairAddress) {
     try {
-        const liquidityPool = new web3_wss.eth.Contract(ABI.getABILiquidity(), pairAddress);
+        const liquidityPool = new web3_wss.eth.Contract(ABI.getPancakePair(), pairAddress);
         console.log("--------------------------");
-        console.log("Listening to Burn() with last block: " + fromBlockNumber);
-
+        const currentBlockNumber = await web3_wss.eth.getBlockNumber();
+        console.log("Listening to Burn() with last block: " + currentBlockNumber);
         liquidityPool.on('Burn', async (data) => {
             console.log(`
                 =================
@@ -81,8 +82,10 @@ wsProvider.on('error', (data) => {
 
 async function p_getReserves(pairAddress) {
     try {
-        const liquidityPool = new web3_wss.eth.Contract(ABI.getABILiquidity(), pairAddress);
-        return await liquidityPool.methods.getReserves().call();
+        if (pairAddress) {
+            const liquidityPool = new web3_wss.eth.Contract(ABI.getPancakePair(), pairAddress);
+            return await liquidityPool.methods.getReserves().call();
+        }
     } catch (error) {
         console.error('Lỗi khi lấy thông tin Reserves:', error);
         return null;

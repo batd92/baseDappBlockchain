@@ -1,6 +1,6 @@
 const ABI = require('../abis');
-const PancakeFactoryV2 = '0xca143ce32fe78f1f7019d7d551a6402fc5350c73';
-
+const PancakeFactoryV2 = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
+const Helper = require('./helper');
 const {     
     w_getWeb3InstanceWSS,
 } = require('./web3');
@@ -9,7 +9,8 @@ const {
 const web3_wss = w_getWeb3InstanceWSS();
 
 const {
-    r_getRedis
+    r_setRedis,
+    r_getRedis,
 } = require('./redis');
 
 // -----functions -----------
@@ -17,22 +18,35 @@ const {
 // getPair
 
 // cấu hình factory_v2
-const factory_v2 = new web3_wss.eth.Contract(ABI.getABIFactory(), PancakeFactoryV2);
+const factory_v2 = new web3_wss.eth.Contract(ABI.getPancakeFactory(), PancakeFactoryV2);
 
 // ---- implement -----
 // get pair by token address
-async function f_getPairs(token0, token1) {
-    console.log('f_getPairs: ', token0.name, '/' , token1.name);
+async function f_getPairs(address) {
     try {
-        let pairAddress = JSON.parse(await r_getRedis().get(token0.address.toString() + token1.address.toString())) || '';
+        // get info token'
+        const { token0, token1 } = await Helper.h_getTokenByAddress(address);
+        // find pair address
+        let pairAddress = JSON.parse(await r_getRedis(token0.address + token1.address)) || '';
         if (!pairAddress) {
             pairAddress = await factory_v2.methods.getPair(token0.address, token1.address).call();
-            if (!pairAddress || pairAddress === '0x0000000000000000000000000000000000000000') {
+            if (!pairAddress) {
                 console.error(`Invalid pair address for ${coinList[i]} & ${config.coin}`);
             }
-            await (r_getRedis().set(token0.address.toString() + token1.address.toString(), JSON.stringify(pairAddress)));
+            await r_setRedis(
+                `${token0.address}-${token1.address}`,
+                {
+                    token0,
+                    token1
+                }
+            );
         }
-        return pairAddress;
+        console.log('[f_getPairs] : ', token0.name, '/' , token1.name, 'pair address: ', pairAddress);
+        return {
+            id: pairAddress,
+            token0, 
+            token1
+        }
     } catch (error) {
 
     }

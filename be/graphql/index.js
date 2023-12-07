@@ -62,7 +62,7 @@ async function h_getTokenGraphql(address) {
         return await g_queryNodereal(await schema.s_getToken(address));        
     } catch (error) {
         console.error('h_getPairGraphql:', error.message);
-        return null;s_
+        return null;
     }
 }
 

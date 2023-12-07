@@ -51,7 +51,7 @@ const wsProvider = new WebSocketProvider('wss://bsc.publicnode.com', options);
 const web3 = new Web3(wsProvider);
 
 // cấu hình router
-const router = new web3.eth.Contract(ABI.getABIFactory(), PancakeRouterV2);
+const router = new web3.eth.Contract(ABI.getPancakeFactory(), PancakeRouterV2);
 async function r_getAmountsOut() {
 
 }

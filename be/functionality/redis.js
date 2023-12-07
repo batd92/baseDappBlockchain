@@ -7,7 +7,7 @@ let redisClient = new Redis({
 
   redisClient.on('error', err => console.log('Redis Client Error', err));
 
-const r_getRedis = () => {
+function getRedisClient() {
     if (!redisClient) {
         redisClient = new Redis({
             host: '127.0.0.1',
@@ -24,8 +24,29 @@ redisClient.on('error', (err) => {
 
 redisClient.on('connect', () => {
     console.log('Connected to Redis');
-  });
+});
+
+async function r_getRedis(key) {
+    try {
+        return JSON.parse(await getRedisClient().get(key));
+    } catch (err) {
+        console.log('r_getRedis :', err);
+        return [];
+    }
+}
+
+async function r_setRedis(key, value) {
+    try {
+        await getRedisClient().set(
+            key,
+            JSON.stringify(value)
+        );
+    } catch (err) {
+        console.log('r_setRedis :', err);
+    }
+}
 
 module.exports = {
+    r_setRedis,
     r_getRedis,
 };
