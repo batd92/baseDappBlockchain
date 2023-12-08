@@ -2,6 +2,7 @@
   "Common": {
     "connect-wallet": "Connect Wallet",
     "currency": "Currency",
+    "env-wallet": "ENV-Wallet",
     "search-networks": "Search Networks",
     "help-info": "Strive not to be a success, but rather to be of value",
     "networks": "Networks",

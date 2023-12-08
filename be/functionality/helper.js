@@ -103,7 +103,6 @@ async function h_loadTopPairsByGraphql() {
 
 // using get and push data when init system
 async function h_loadTokenByGraphql() {
-
     const keys = Object.keys(coinList);
     for (let index = 0; index < keys.length; index++) {
         const response = await graphql.h_getTokenGraphql(coinList[keys[index]]);
@@ -114,6 +113,9 @@ async function h_loadTokenByGraphql() {
     }
     return;
 }
+async function h_checkAddress(address) {
+    await web3_http.utils.isAddress(address);
+}
 
 module.exports = {
     h_getTokenByAddress,
@@ -121,5 +123,6 @@ module.exports = {
     h_setContract,
     h_getPrice,
     h_loadTopPairsByGraphql,
-    h_loadTokenByGraphql
+    h_loadTokenByGraphql,
+    h_checkAddress
 }

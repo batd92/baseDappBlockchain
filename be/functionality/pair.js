@@ -1,12 +1,10 @@
 const ABI = require('../abis');
 const {     
     w_getWeb3InstanceWSS,
-    w_getWsProviderWSS
 } = require('./web3');
 
 // instance của web3
 const web3_wss = w_getWeb3InstanceWSS();
-const wsProvider = w_getWsProviderWSS();
  
 // -----functions -----------
 // - Mint
@@ -73,10 +71,6 @@ async function p_checkBurn(pairAddress) {
     }
 }
 
-// Event error on WebSocket
-wsProvider.on('error', (data) => {
-    console.log(`Error websocket !!!`, data);
-});
 
 // Lấy số lượng thanh khoản (getReserves)
 

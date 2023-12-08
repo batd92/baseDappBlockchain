@@ -11,39 +11,6 @@ function EnvTrade({ }) {
               <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-12">
                   <div class="mt-2">
-                    <div className="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 sm:max-w-md">
-                      <span class="flex select-none items-center pl-3 text-gray-500 sm:text-sm">Private Key</span>
-                      <textarea
-                        id="private"
-                        name="private"
-                        rows="4"
-                        className="block w-full border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6">
-                      </textarea>
-                    </div>
-                  </div>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
-                      <span class="flex select-none items-center pl-3 text-gray-500 sm:text-sm">Gas Limit</span>
-                      <input
-                        type="text"
-                        name="gas-limit"
-                        id="gas-limit"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6"
-                        placeholder="" />
-                    </div>
-                  </div>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
-                      <span class="flex select-none items-center pl-3 text-gray-500 sm:text-sm">Gas Wei</span>
-                      <input
-                        type="text"
-                        name="gas-wei"
-                        id="gas-wei"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6"
-                        placeholder="" />
-                    </div>
-                  </div>
-                  <div class="mt-2">
                     <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
                       <span class="flex select-none items-center pl-3 text-gray-500 sm:text-sm">Fee Estimate</span>
                       <input
@@ -149,7 +116,6 @@ function EnvTrade({ }) {
           </button>
         </div>
       </div>
-      {/* <AddNetwork chain={chain} buttonOnly lang="en" /> */}
     </div>
   );
 }

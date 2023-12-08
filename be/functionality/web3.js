@@ -9,8 +9,6 @@ const optionsHTTP = {
 };
 
 const BSC_NODE_HTTP_URL = 'https://bsc-dataseed.bnbchain.org';  // Thay đổi địa chỉ nếu bạn sử dụng HTTP
-
-// Biến tĩnh để lưu trữ instance của web3
 let web3InstanceHTTP = null;
 
 // Hàm trả về instance của web3, tạo mới nếu chưa tồn tại
@@ -22,76 +20,15 @@ const w_getWeb3InstanceHTTP = () => {
     return web3InstanceHTTP;
 };
 
-const optionsWSS = {
-    timeout: 30000, // ms
-
-    // Useful for credentialed urls, e.g: ws://username:password@localhost:8546
-    headers: {
-        authorization: 'Basic username:password'
-    },
-
-    clientConfig: {
-        // Useful if requests are large
-        maxReceivedFrameSize: 100000000,   // bytes - default: 1MiB
-        maxReceivedMessageSize: 100000000, // bytes - default: 8MiB
-
-        // Useful to keep a connection alive
-        keepalive: true,
-        keepaliveInterval: 60000 // ms
-    },
-
-    // Enable auto reconnection
-    reconnect: {
-        auto: true,
-        delay: 1000, // ms
-        maxAttempts: 5,
-        onTimeout: false
-
-    }
-};
-
-// Biến tĩnh để lưu trữ instance của web3
 let web3InstanceWSS = null;
-
-// wsProvider of web3
-let wsProvider = null;
-
-// Hàm trả về instance của web3, tạo mới nếu chưa tồn tại
 const w_getWeb3InstanceWSS = () => {
     if (!web3InstanceWSS) {
-        if (!wsProvider) {
-            wsProvider = new WebSocketProvider('wss://bsc.publicnode.com', optionsWSS);
-        }
-        web3InstanceWSS = new Web3(wsProvider);
+        web3InstanceWSS = new Web3('wss://bsc.publicnode.com', { timeout: 60000 });
     }
     return web3InstanceWSS;
 };
 
-const w_getWsProviderWSS = () => {
-    if (!wsProvider) {
-        wsProvider = new WebSocketProvider('wss://bsc.publicnode.com', optionsWSS);
-        wsProvider.setMaxListeners(15);
-    }
-    wsProvider.on('error', (err) => {
-        console.error('WebSocket connection error:', err);
-        if (!wsProvider.reconnecting) {
-            w_getWeb3InstanceWSS();
-        }
-    });
-    
-    wsProvider.on('end', (event) => {
-        console.log('WebSocket connection closed:', event);
-        if (!wsProvider.reconnecting) {
-            w_getWeb3InstanceWSS();
-        }
-      });
-    return wsProvider;
-};
-
-
-// Xuất hàm để có thể sử dụng ở nơi khác trong ứng dụng
 module.exports = {
     w_getWeb3InstanceHTTP,
     w_getWeb3InstanceWSS,
-    w_getWsProviderWSS
 };

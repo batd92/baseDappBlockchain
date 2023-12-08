@@ -36,18 +36,24 @@ export default function Layout({ children, lang, mode = 'rpc' }) {
           <div className="flex flex-col gap-4 w-full">
             <a
               className="flex items-center justify-center mx-auto lg:ml-0 gap-2 rounded-[50px] max-w-[16.25rem] font-medium py-[18px] px-6 shadow-lg w-full dark:bg-[#2F80ED] bg-[#2F80ED] dark:text-black text-white"
-              href="http://localhost:3000/"
-              rel="noopener noreferrer"
-            >
-              <span className="text-base font-medium">{t("networks")}</span>
-            </a>
-
-            <a
-              className="flex items-center justify-center mx-auto lg:ml-0 gap-2 rounded-[50px] max-w-[16.25rem] font-medium py-[17px] px-6 w-full dark:bg-[#0D0D0D] bg-white dark:text-[#2F80ED] text-[#2F80ED] border dark:border-[#171717] border-[#EAEAEA]"
               href="http://localhost:3000/trade"
               rel="noopener noreferrer"
             >
               <span className="text-base font-medium">{t("trade")}</span>
+            </a>
+            <a
+              className="flex items-center justify-center mx-auto lg:ml-0 gap-2 rounded-[50px] max-w-[16.25rem] font-medium py-[17px] px-6 w-full dark:bg-[#0D0D0D] bg-white dark:text-[#2F80ED] text-[#2F80ED] border dark:border-[#171717] border-[#EAEAEA]"
+              href="http://localhost:3000/wallet"
+              rel="noopener noreferrer"
+            >
+              <span className="text-base font-medium">{t("env-wallet")}</span>
+            </a>
+            <a
+              className="flex items-center justify-center mx-auto lg:ml-0 gap-2 rounded-[50px] max-w-[16.25rem] font-medium py-[17px] px-6 w-full dark:bg-[#0D0D0D] bg-white dark:text-[#2F80ED] text-[#2F80ED] border dark:border-[#171717] border-[#EAEAEA]"
+              href="http://localhost:3000/"
+              rel="noopener noreferrer"
+            >
+              <span className="text-base font-medium">{t("networks")}</span>
             </a>
           </div>
         </div>

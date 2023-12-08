@@ -12,9 +12,8 @@ const Helper = require('./functionality/helper');
   }
   // Load and Push data on Redis
   // await Helper.h_loadTokenByGraphql();
-  await PcSwapPair.p_checkMintEvent('0x0eD7e52944161450477ee417DE9Cd3a859b14fD0');
-  await PcSwapPair.p_checkSwap('0x0eD7e52944161450477ee417DE9Cd3a859b14fD0');
-  await PcSwapFactory.f_checkPairCreated();
+
+  
 })();
 
 const io = require("socket.io")(httpServer, {

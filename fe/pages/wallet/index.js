@@ -1,14 +1,11 @@
 import * as React from "react";
 import Head from "next/head";
-import Link from "next/link";
 import { notTranslation as useTranslations } from "../../utils";
-import AddNetwork from "../../components/chain";
 import Layout from "../../components/Layout";
-import EnvTrade from "../../components/env-trade";
-import Logs from "../../components/logs";
+import EnvWallet from "../../components/env-wallet";
 
 
-function Provider({ chain }) {
+function Wallet({ chain }) {
   const t = useTranslations("Common", "en");
 
   const icon = React.useMemo(() => {
@@ -25,10 +22,9 @@ function Provider({ chain }) {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <Layout lang="en" mode="provider"><Logs></Logs><EnvTrade></EnvTrade></Layout>
+      <Layout lang="en" mode="provider"><EnvWallet></EnvWallet></Layout>
     </>
   );
 }
 
-export default Provider;
+export default Wallet;
