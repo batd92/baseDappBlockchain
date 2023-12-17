@@ -1,3 +1,10 @@
+/*=================================================*/
+/*                                                 */
+/*              Written By TàoBa.                  */
+/*                                                 */
+/*=================================================*/
+
+
 const ABI = require('../abis');
 const { coinList } = require('../functionality/constants');
 const graphql = require('../graphql/index');
@@ -117,6 +124,19 @@ async function h_checkAddress(address) {
     await web3_http.utils.isAddress(address);
 }
 
+/**
+ * Check Pair
+ * @param {*} pair 
+ * @returns 
+ */
+async function h_isPairAddress(pair) {
+    // No pair found, re-launch
+    if (!pair || (pair.toString().indexOf('0x0000000000000') > -1)) {
+        msg.warning("[debug::pair] Could not find pair for specified contracts.");
+        process.exit();
+    }
+    return true;
+}
 module.exports = {
     h_getTokenByAddress,
     h_getTokensPair,
@@ -124,5 +144,6 @@ module.exports = {
     h_getPrice,
     h_loadTopPairsByGraphql,
     h_loadTokenByGraphql,
-    h_checkAddress
+    h_checkAddress,
+    h_isPairAddress
 }
