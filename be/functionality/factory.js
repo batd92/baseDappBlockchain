@@ -30,8 +30,10 @@ async function f_getPairs(address) {
         let pairAddress = JSON.parse(await r_getRedis(token0.address + token1.address)) || '';
         if (!pairAddress) {
             pairAddress = await factory_v2.methods.getPair(token0.address, token1.address).call();
-            if (!pairAddress) {
+            h_isPairAddress
+            if (!Helper.h_isPairAddress(pairAddress)) {
                 console.error(`Invalid pair address for ${coinList[i]} & ${config.coin}`);
+                return;
             }
             await r_setRedis(
                 `${token0.address}-${token1.address}`,
@@ -48,7 +50,7 @@ async function f_getPairs(address) {
             token1
         }
     } catch (error) {
-
+        console.log('[f_getPairs] : ', error);
     }
 }
 async function f_checkPairCreated() {

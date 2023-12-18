@@ -70,7 +70,7 @@ async function r_getAmountsOut(inputTokenAmount, [from, to]) {
 }
 
 /**
- * Buy token
+ * swapExactETHForTokensSupportingFeeOnTransferTokens (Buy token)
  * @param {*} amountIn 
  * @param {*} amountOutMin 
  * @param {*} contracts 
@@ -78,24 +78,17 @@ async function r_getAmountsOut(inputTokenAmount, [from, to]) {
  * @returns 
  */
 async function r_swapExactETHForTokensSupportingFeeOnTransferTokens(
-    amountIn,
     amountOutMin,
-    contracts,
-    nonce,
-    account_address
+    [toToken],
+    account,
+    deadline
     ) {
     try {
         return router.swapExactETHForTokensSupportingFeeOnTransferTokens(
             amountOutMin,
-            contracts,
-            account_address,
-            (Date.now() + 1000 * 60 * 10),
-            {
-                'value': amountIn,
-                'gasLimit': CFG.CustomStrategyBuy.GAS_LIMIT,
-                'gasPrice': CFG.CustomStrategyBuy.GAS_PRICE,
-                'nonce': nonce
-            }
+            [toToken],
+            account,
+            deadline
         );
 
     } catch (e) {
@@ -105,69 +98,38 @@ async function r_swapExactETHForTokensSupportingFeeOnTransferTokens(
 }
 
 /**
- * Sell token
- * @param {*} sellAmount 
- * @param {*} amountOutMin 
- * @param {*} contracts 
+ * Get balance
+ * @param {*} account 
  * @returns 
  */
-async function r_swapExactTokensForETHSupportingFeeOnTransferTokens(sellAmount, amountOutMin, contracts, my_address) {
-    try {
-        return router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            sellAmount,   // The amount of input tokens to send.
-            amountOutMin, // The minimum amount of output tokens that must be received for the transaction not to revert.
-            contracts,    // An array of token addresses. path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
-            my_address, // Recipient of the ETH.
-            Math.floor(Date.now() / 1000) + 60 * 20, // (Date.now() + 1000 * 60 * 10)
-            {
-                'gasLimit': CFG.CustomStrategySell.GAS_LIMIT,
-                'gasPrice': CFG.CustomStrategySell.GAS_PRICE
-            }
-        );
-    } catch (error) {
-        console.log('swapExactTokensForETHSupportingFeeOnTransferTokens: ', error);
-    }
+async function r_balanceOf(account) {
+    return await router.methods.balanceOf(account).call();
 }
 
 /**
- * Get estimate
- * @param {*} amountIn 
+ * swapExactTokensForTokens (sell token)
+ * @param {*} amountToSell 
  * @param {*} amountOutMin 
- * @param {*} contracts 
+ * @param {*} fromToken 
+ * @param {*} toToken 
+ * @param {*} account 
+ * @param {*} deadline 
  * @returns 
  */
-async function r_estimateTransaction(amountIn, amountOutMin, contracts, account_address) {
-    try {
-        let gas = await router.estimateGas.swapExactETHForTokensSupportingFeeOnTransferTokens(
-            amountOutMin,
-            contracts,
-            account_address,
-            (Date.now() + 1000 * 60 * 10),
-            {
-                'value': amountIn,
-                'gasLimit': CFG.CustomStrategyBuy.GAS_LIMIT,
-                'gasPrice': CFG.CustomStrategyBuy.GAS_PRICE
-            }
-        );
-
-        // TODO: Check (fee gas + fee buy) <= money in wallet => gas increase
-        // Check if is using enough gas.
-        if (gas > parseInt(CFG.CustomStrategyBuy.GAS_LIMIT)) {
-            msg.error(`[error::simulate] The transaction requires at least ${gas} gas, your limit is ${CFG.CustomStrategyBuy.GAS_LIMIT}.`);
-            process.exit();
-        }
-        return gas;
-    } catch (e) {
-        // TODO: Check (fee gas + fee buy) <= money in wallet => gas increase
-        console.log(`[error::estimate_gas] ${e}`);
-        //return this.estimateTransaction(amountIn, amountOutMin, contracts);
-        process.exit();
-    }
+async function r_swapExactTokensForTokens(amountToSell, amountOutMin, fromToken, toToken, account, deadline) {
+    return router.methods.swapExactTokensForTokens(
+        amountToSell,
+        amountOutMin,
+        [fromToken, toToken],
+        account,
+        deadline
+    );
 }
 
 module.exports = {
     r_getAmountsOut,
     r_swapExactETHForTokensSupportingFeeOnTransferTokens,
-    r_swapExactTokensForETHSupportingFeeOnTransferTokens,
-    r_estimateTransaction
+    r_balanceOf,
+    r_swapExactTokensForTokens
 }
+

@@ -16,7 +16,8 @@ const { Network } = require('./src/swapper/network');
 const EventEmitter = require('events').EventEmitter;
 const Msg = require('./src/classes/msg');
 
-// Lấy số luồng trong máy tính và ép ứng dụng chạy tài nguyênß
+// Lấy số luồng trong máy tính và ép ứng dụng chạy tài nguyên
+
 const os = require('os');
 process.env.UV_THREADPOOL_SIZE = os.cpus().length - 1;
 const BUSD = process.env.BUSD || '0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16';

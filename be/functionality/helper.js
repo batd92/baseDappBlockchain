@@ -133,7 +133,7 @@ async function h_isPairAddress(pair) {
     // No pair found, re-launch
     if (!pair || (pair.toString().indexOf('0x0000000000000') > -1)) {
         msg.warning("[debug::pair] Could not find pair for specified contracts.");
-        process.exit();
+        return false;
     }
     return true;
 }

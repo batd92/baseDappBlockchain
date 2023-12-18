@@ -87,7 +87,7 @@ async function p_getReserves(pairAddress) {
             return await liquidityPool.methods.getReserves().call();
         }
     } catch (error) {
-        console.error('Lỗi khi lấy thông tin Reserves:', error);
+        console.error('[p_getReserves] : ', error);
         return null;
     }
 }

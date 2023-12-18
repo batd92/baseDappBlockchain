@@ -19,7 +19,7 @@ class Wallet {
         this.privateKey = '';
     }
 
-    async load(privateKey, httpRpc, accountIndex = 0) {
+    async wl_Load(privateKey, httpRpc, accountIndex = 0) {
         if (privateKey && httpRpc) {
             try {
                 const web3 = new Web3(httpRpc);
@@ -39,30 +39,47 @@ class Wallet {
     }
     
 
-    async _getBalance() {
+    wl_getBalance() {
         return this.web3.utils.fromWei(await this.web3.eth.getBalance(this.account.address), 'ether');
     }
 
-    async _getNetwork() {
+    wl_getChainId() {
         return this.network;
     }
 
-    async _getPrivateKey() {
+    wl_getPrivateKey() {
         return this.privateKey;
     }
 
-    async _getAccount() {
+    wl_getAccount() {
         return this.account;
     }
 
-    getNonce() {
+    wl_getNonce() {
         return this.baseNonce + this.nonceOffset++;
     }
 
-    async tryNonce() {
+    // The number of transactions sent from the given address.
+    async wl_tryNonce() {
         this.baseNonce = parseInt(await this.web3.eth.getTransactionCount(this.account.address));
         this.nonceOffset = 0;
         this.firstBlock = -1;
     }
+
+    // Sign the transaction
+    async wl_signTransaction(rawTransaction) {
+        return await this.web3.eth.accounts.signTransaction(rawTransaction, this.privateKey);
+    }
+
+    // Send the signed transaction
+    async wl_sendSignedTransaction(signedTransaction) {
+        await await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+    }
+
+    // Returns the current gas price oracle. The gas price is determined by the last few blocks median gas price.
+    async wl_getGasPrice() {
+        return await this.web3.eth.getGasPrice();
+    }
+
 }
 module.exports = new Wallet();
