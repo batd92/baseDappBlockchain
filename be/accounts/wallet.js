@@ -5,7 +5,8 @@
 /*=================================================*/
 
 const Web3 = require('web3');
-const Msg = require('../classes/msg');
+const Log = require('../functionality/log');
+const nocache = require("nocache");
 
 class Wallet {
     constructor() {
@@ -38,16 +39,16 @@ class Wallet {
                 this.privateKey = privateKey;
                 return true;
             } catch (e) {
-                Msg.error(`[Wallet::error] ${e}`);
+                Log.error(`[Wallet::error] ${e}`);
                 return false;
             }
-        }
+        }        
     }
 
     wl_Wallet() {
         return this;
     }
-    wl_getBalance() {
+    async wl_getBalance() {
         return this.web3.utils.fromWei(await this.web3.eth.getBalance(this.account.address), 'ether');
     }
 
@@ -88,6 +89,5 @@ class Wallet {
     async wl_getGasPrice() {
         return await this.web3.eth.getGasPrice();
     }
-
 }
 module.exports = new Wallet();

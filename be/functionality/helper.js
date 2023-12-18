@@ -8,6 +8,7 @@
 const ABI = require('../abis');
 const { coinList } = require('../functionality/constants');
 const graphql = require('../graphql/index');
+const Log = require('../functionality/log');
 
 const {
     w_getWeb3InstanceHTTP,
@@ -132,7 +133,7 @@ async function h_checkAddress(address) {
 async function h_isPairAddress(pair) {
     // No pair found, re-launch
     if (!pair || (pair.toString().indexOf('0x0000000000000') > -1)) {
-        msg.warning("[debug::pair] Could not find pair for specified contracts.");
+        Log.warning("[debug::pair] Could not find pair for specified contracts.");
         return false;
     }
     return true;

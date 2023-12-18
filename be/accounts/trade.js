@@ -71,7 +71,7 @@ async function t_buyTokenSupportingFeeOnTransferTokens(
             deadline
         );
 
-        const value = Web3.utils.toWei(amountBNB.toString();
+        const value = Web3.utils.toWei(amountBNB.toString());
         const gasPrice = Web3.utils.toHex(_gasPrice);
         const gasLimit = Web3.utils.toHex(_gasLimit);
 

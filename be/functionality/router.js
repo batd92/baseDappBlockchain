@@ -6,7 +6,7 @@
 
 const { Web3 } = require('web3');
 const { WebSocketProvider } = require('web3-providers-ws');
-const ABI = require('../be_bot/abis');
+const ABI = require('../abis');
 const PancakeRouterV2 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 
 // -----functions -----------

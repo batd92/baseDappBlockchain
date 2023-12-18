@@ -17,8 +17,8 @@ function Logs({ }) {
 
   return (
     <div className="shadow dark:bg-[#0D0D0D] bg-white p-8 rounded-[10px] flex flex-col gap-3 overflow-hidden">
-      <h6 class="text-lg font-bold dark:text-white">Logs</h6>
-      <p class="text-red-600"><span class="text-blue-600">{logs.time} </span>{logs.message}</p>
+      <h6 className="text-lg font-bold dark:text-white">Logs</h6>
+      <p className="text-red-600"><span className="text-blue-600">{logs.time} </span>{logs.message}</p>
     </div>
   );
 }

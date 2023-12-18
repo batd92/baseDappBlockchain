@@ -3,26 +3,10 @@
 /*              Written By TàoBa.                  */
 /*                                                 */
 /*=================================================*/
-const Until = require('./src/classes/until');
-const Wallet = require('./src/swapper/wallet');
-const Router = require('./src/swapper/router');
-const ContractIn = require('./src/swapper/contract_in');
-const ContractOut = require('./src/swapper/contract_out');
-const Factory = require('./src/swapper/factory');
-const Cache = require('./src/classes/cache');
-const CFG = require('./config');
 
 const { Network } = require('./src/swapper/network');
 const EventEmitter = require('events').EventEmitter;
-const Msg = require('./src/classes/msg');
-
-// Lấy số luồng trong máy tính và ép ứng dụng chạy tài nguyên
-
-const os = require('os');
-process.env.UV_THREADPOOL_SIZE = os.cpus().length - 1;
-const BUSD = process.env.BUSD || '0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16';
-const BNB = process.env.BNB || '0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16';
-
+const Log = require('./functionality/log');
 // Main
 class Monitor extends EventEmitter {
     constructor(account, factory, contract_in, contract_out, router) {
@@ -56,20 +40,6 @@ class Monitor extends EventEmitter {
         this.monitWallet().then();
     }
 
-    /**
-     * Start Liquidity
-     */
-    startLiquidity() {
-        this.runCheckLiquidity = true;
-        this.monitLiquidity().then();
-    }
-    /**
-     * Burn token
-     */
-    burnUnicrypt() {
-        this.isBurnUnicrypt = true;
-        this.monitBurnUnicrypt().then();
-    }
 
     /**
      * Run
@@ -92,13 +62,13 @@ class Monitor extends EventEmitter {
                 let { outputAmount, raw } = await this.contract_out._getBalance(await this.account._getAccount());
                 let bnb = await this.account._getBalance();
                 console.clear();
-                Msg.primary('Đang quét ví .... ');
-                Msg.warning(`Số lượng (BNB) trong ví:  ${bnb}`);
-                Msg.warning(`Số lượng token (${CFG.Tokens.TokenSwap}) trong ví: ${outputAmount}`);
-                Msg.warning(`Số lượng token (${CFG.Tokens.TokenSwap}) trong ví trước đó: ${this.outputAmount}`);
+                Log.primary('Đang quét ví .... ');
+                Log.warning(`Số lượng (BNB) trong ví:  ${bnb}`);
+                Log.warning(`Số lượng token (${CFG.Tokens.TokenSwap}) trong ví: ${outputAmount}`);
+                Log.warning(`Số lượng token (${CFG.Tokens.TokenSwap}) trong ví trước đó: ${this.outputAmount}`);
                 // Truy vấn số token trong ví
                 if (outputAmount !== this.outputAmount && outputAmount > CFG.Environment.MinimumQuantityForSell) {
-                    Msg.warning('Đang bán token .... ');
+                    Log.warning('Đang bán token .... ');
                     this.emit('wallet.update.output_token', { raw, network: this.network });
                     this.outputAmount = outputAmount;
                     this.emit('wallet.loaded');
@@ -133,16 +103,6 @@ class Monitor extends EventEmitter {
             // Check nếu có sự thay đổi về liquidity thì bán token
         }
     }
-    /**
-     * Auto buy token
-     */
-    async canBuyWithoutChecking() {
-        // prepare
-        await this.network.prepare();
-        console.time('time-buy');
-        await this.network.transactToken(CFG.Tokens.BNB, CFG.Tokens.TokenSwap);
-        console.timeEnd('time-buy');
-    }
 
     /**
      * Get Profit
@@ -153,17 +113,6 @@ class Monitor extends EventEmitter {
     async getProfit(currentPrice, oldPrice) {
         return currentPrice / oldPrice;
     }
-
-    /**
-     * approve token
-     */
-    async approveToken() {
-        // prepare
-        console.log('Approve Token .... ');
-        await this.network.prepare();
-        await this.network.getPair(CFG.Tokens.BNB, CFG.Tokens.TokenSwap, true);
-        return;
-    };
 }
 
 /**
@@ -171,15 +120,13 @@ class Monitor extends EventEmitter {
  * @param {*} param0 
  * @returns 
  */
-const scheduleMonitor = async ({ canBuy = undefined, canSell = undefined, canUnicrypt = undefined, canApprove = undefined, canLiquidity = undefined }) => {
+const scheduleMonitor = async ({ 
+        canBuy = undefined, 
+        canSell = undefined, 
+        canLiquidity = undefined
+    }) => {
     const monitor = new Monitor(Wallet, Factory, ContractIn, ContractOut, Router);
     await monitor.load();
-
-    // Nếu chỉ mua thì mua xong và thoát
-    if (canBuy) {
-        await monitor.canBuyWithoutChecking();
-        return;
-    }
 
     // Nếu chỉ có bán
     if (canSell) {
@@ -194,19 +141,6 @@ const scheduleMonitor = async ({ canBuy = undefined, canSell = undefined, canUni
             await payload.network.sellTokens(CFG.Tokens.TokenSwap, CFG.Tokens.BNB, payload.raw);
             console.timeEnd('time-sell');
         });
-        return;
-    }
-
-    // Nếu chỉ đốt token
-    if (canUnicrypt) {
-        monitor.burnUnicrypt();
-        console.log('burn token, check số lượng người bán và số lượng token burn');
-        return;
-    }
-
-    // Nếu chỉ có approve
-    if (canApprove) {
-        await monitor.approveToken();
         return;
     }
 

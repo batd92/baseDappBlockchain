@@ -4,8 +4,6 @@
 /*                                                 */
 /*=================================================*/
 
-module.exports = new Msg();
-
 async function s_getToken(address) {
     return `
     {

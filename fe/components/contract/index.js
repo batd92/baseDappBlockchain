@@ -65,7 +65,7 @@ function Contract({ lang, data }) {
           <div className="rounded-t-[10px] shadow-sm">
             <label className="flex sm:items-center flex-col sm:flex-row focus-within:ring-2 dark:ring-[#2F80ED] ring-[#2F80ED] rounded-t-[10px]">
               <span className="font-bold text-sm dark:text-[#B3B3B3] text-black whitespace-nowrap px-3 pt-4 sm:pt-0">
-              <h6 class="text-lg font-bold dark:text-white">BNN Chain</h6>
+              <h6 className="text-lg font-bold dark:text-white">BNN Chain</h6>
               </span>
               <input
                 value={WBNB}

@@ -5,6 +5,10 @@ const Helper = require('./functionality/helper');
 const Wallet = require('./accounts/wallet');
 const Trade = require('./accounts/trade');
 
+// Lấy số luồng trong máy tính và ép ứng dụng chạy tài nguyên
+const os = require('os');
+process.env.UV_THREADPOOL_SIZE = os.cpus().length - 1;
+
 // init system
 (async () => {
   const LoadGraphql = false;
@@ -46,9 +50,14 @@ io.on("connection", function (socket) {
     await app_checkMint(socket, params);
   });
 
-  // setting .env
-  socket.on('add_h_envWallet', async function (params) {
+  // save setting wallet
+  socket.on('add_envWallet', async function (params) {
     await app_setEnvWallet(socket, params);
+  });
+
+  // Get wallet info
+  socket.on('get_envWallet', async function (params) {
+    
   });
 
   // sell token manual
@@ -141,6 +150,6 @@ async function trade_h_sellTokenManual(socket, params) {
       )
     }
   } catch (error) {
-    
+    console.log('[trade_h_sellTokenManual]: ', error);
   }
 }
