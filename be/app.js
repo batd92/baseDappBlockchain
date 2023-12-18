@@ -2,6 +2,8 @@ const httpServer = require('http').createServer();
 const PcSwapFactory = require('./functionality/factory');
 const PcSwapPair = require('./functionality/pair');
 const Helper = require('./functionality/helper');
+const Wallet = require('./accounts/wallet');
+const Trade = require('./accounts/trade');
 
 // init system
 (async () => {
@@ -13,7 +15,7 @@ const Helper = require('./functionality/helper');
   // Load and Push data on Redis
   // await Helper.h_loadTokenByGraphql();
 
-  
+
 })();
 
 const io = require("socket.io")(httpServer, {
@@ -28,25 +30,30 @@ httpServer.listen(9001);
 
 io.on("connection", function (socket) {
   console.log("------- Made socket connection -----");
+
   // check token
   socket.on('check_h_Token', async function (params) {
-    const connections = io.sockets.sockets;
-    console.log("The number of connections: ", Object.keys(connections).length);
     await app_getToken(socket, params);
   });
 
   // check price
   socket.on('check_h_getPrice', async function (params) {
-    const connections = io.sockets.sockets;
-    console.log("The number of connections: ", Object.keys(connections).length);
     await app_getPrice(socket, params);
   });
 
   // check mint token (block)
   socket.on('check_h_getMint', async function (params) {
-    const connections = io.sockets.sockets;
-    console.log("The number of connections: ", Object.keys(connections).length);
     await app_checkMint(socket, params);
+  });
+
+  // setting .env
+  socket.on('add_h_envWallet', async function (params) {
+    await app_setEnvWallet(socket, params);
+  });
+
+  // sell token manual
+  socket.on('trade_h_sellTokenManual', async function (params) {
+    await trade_h_sellTokenManual(socket, params);
   });
 
 });
@@ -84,5 +91,56 @@ async function app_checkMint(socket, params) {
     await PcSwapPair.p_checkMintEvent(pair.id);
   } catch (error) {
     console.log('[app_checkMint]: ', error);
+  }
+}
+
+// set wallet
+async function app_setEnvWallet(socket, params) {
+  try {
+    const query = JSON.parse(params || '');
+    // check validate
+    const private_key = query.private_key;
+    let response = {
+      status: 200,
+      content: 'NG'
+    }
+    if (private_key) {
+      const result = await Wallet.wl_Load(private_key);
+      if (result) response.content = 'OK'
+    }
+    socket.emit('get_h_envWallet', JSON.stringify(response));
+  } catch (error) {
+    console.log('[app_setEnvWallet]: ', error);
+  }
+}
+
+// sell token manual
+async function trade_h_sellTokenManual(socket, params) {
+  try {
+    const query = JSON.parse(params || '');
+    // check validate
+    const gasPrice = query.gasPrice;
+    const gasLimit = query.gasLimit;
+    const fromToken = query.fromToken;
+    const percentageToSell = query.percentageToSell;
+    const slippageTolerance = query.slippageTolerance;
+    const toToken = query.toToken;
+
+    // get account
+    const wallet = Wallet.wl_Wallet();
+    if (wallet.account) {
+      await Trade.t_sellPercentageOfTokens(
+        wallet,
+        routerAddress = '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+        gasPrice,
+        gasLimit,
+        fromToken,
+        percentageToSell,
+        slippageTolerance,
+        toToken,
+      )
+    }
+  } catch (error) {
+    
   }
 }
