@@ -1,8 +1,9 @@
 # Getting started
 
 1. Clone repo
-1. install dependencies: `npm install`
-1. start server: `npm start`
+2. Install Redis `https://redis.io/docs/install/install-redis/`
+3. Install dependencies: `npm install`
+4. Run server: `npm start`
 
 Use browser developer tools for websocket connection and sending messages:
 
