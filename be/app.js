@@ -4,6 +4,8 @@ const PcSwapPair = require('./functionality/pair');
 const Helper = require('./functionality/helper');
 const Wallet = require('./accounts/wallet');
 const Trade = require('./accounts/trade');
+const Token = require('./functionality/token');
+const Monitor = require('./monitor');
 
 // Lấy số luồng trong máy tính và ép ứng dụng chạy tài nguyên
 const os = require('os');
@@ -151,5 +153,30 @@ async function trade_h_sellTokenManual(socket, params) {
     }
   } catch (error) {
     console.log('[trade_h_sellTokenManual]: ', error);
+  }
+}
+
+// sell token manual
+async function trade_h_sellTokenAuto(socket, params) {
+  try {
+    // const query = JSON.parse(params || '');
+    // // check validate
+    // const gasPrice = query.gasPrice;
+    // const gasLimit = query.gasLimit;
+    // const fromToken = query.fromToken;
+    // const percentageToSell = query.percentageToSell;
+    // const slippageTolerance = query.slippageTolerance;
+    // const toToken = query.toToken;
+
+    const wallet = await Wallet.wl_Load('641b5ddacec781b69f347c84abe8b2c1b00487a71b15f5ac0530e359a5e2726d', 'https://bsc-dataseed.bnbchain.org');
+    const balance = await Wallet.wl_getBalance();
+  
+    const token = await Token.t_getBalance('0x55d398326f99059fF775485246999027B3197955', wallet.account);
+    Monitor.scheduleMonitor({
+      wallet,
+      canSell: true
+    })
+  } catch (error) {
+    console.log('[trade_Auto]: ', error);
   }
 }

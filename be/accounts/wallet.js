@@ -4,10 +4,8 @@
 /*                                                 */
 /*=================================================*/
 
-const Web3 = require('web3');
+const { Web3 } = require('web3');
 const Log = require('../functionality/log');
-const nocache = require("nocache");
-
 class Wallet {
     constructor() {
         if (!Wallet.instance) {
@@ -29,18 +27,19 @@ class Wallet {
         if (privateKey && httpRpc) {
             try {
                 const web3 = new Web3(httpRpc);
-                const account = web3.eth.accounts.privateKeyToAccount(privateKey);
+                // convert to hexadecimal
+                const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
                 web3.eth.accounts.wallet.add(account);
-
+                this.web3 = web3;
                 this.account = account;
                 this.network = await web3.eth.net.getId();
                 this.bnbBalance = parseFloat(await web3.eth.getBalance(account.address));
                 this.baseNonce = parseInt(await web3.eth.getTransactionCount(account.address));
                 this.privateKey = privateKey;
-                return true;
+                return this;
             } catch (e) {
                 Log.error(`[Wallet::error] ${e}`);
-                return false;
+                return this;
             }
         }        
     }
