@@ -4,14 +4,20 @@ const PcSwapPair = require('./functionality/pair');
 const Helper = require('./functionality/helper');
 const Wallet = require('./accounts/wallet');
 const Trade = require('./accounts/trade');
+const Config = require('./accounts/config');
 const Token = require('./functionality/token');
 const Monitor = require('./monitor');
 
-// Lấy số luồng trong máy tính và ép ứng dụng chạy tài nguyên
+const express = require('express');
+const cors = require('cors');
+const app = express();
+app.use(express.json());
+app.use(cors());
+
 const os = require('os');
 process.env.UV_THREADPOOL_SIZE = os.cpus().length - 1;
 
-// init system
+// Load system
 (async () => {
   const LoadGraphql = false;
   if (LoadGraphql) {
@@ -20,10 +26,11 @@ process.env.UV_THREADPOOL_SIZE = os.cpus().length - 1;
   }
   // Load and Push data on Redis
   // await Helper.h_loadTokenByGraphql();
-
-
 })();
 
+/**
+ * Socket
+ */
 const io = require("socket.io")(httpServer, {
   cors: {
     origin: "*",
@@ -32,10 +39,116 @@ const io = require("socket.io")(httpServer, {
 });
 
 io.setMaxListeners(15); // Adjust the number based on your needs
-httpServer.listen(9001);
+
+/**
+ * Router
+ */
+
+/* connect-wallet */
+app.post('/connect-wallet', async (req, res) => {
+
+  try {
+    const { privateKey, httpRpc = 'https://data-seed-prebsc-1-s1.binance.org:8545' } = req.body;
+    const wallet = await Wallet.wl_Load(privateKey, httpRpc);
+    if (wallet.account) {
+      await Config.c_setTrade({}, key = 'privateKey', privateKey.toString());
+      return res.send({
+        statusText: 'OK',
+        data: {
+          bnbBalance: await Wallet.wl_getBalance(),
+          chainId: await Wallet.wl_getChainId()
+        }
+      });
+    }
+  } catch (error) {
+    return res.send({
+      statusText: 'NG',
+      data: {
+        error
+      }
+    });
+  }
+});
+
+app.get('/config', async (req, res) => {
+
+  try {
+    const config = await Config.c_getTrade('_config');
+    return res.send({
+      statusText: 'OK',
+      data: {
+        config
+      }
+    });
+  } catch (error) {
+    return res.send({
+      statusText: 'NG',
+      data: {
+        error
+      }
+    });
+  }
+});
+
+app.post('/save-config', async (req, res) => {
+  const params = {
+    gasLimit: req.body.gasLimit || 0,
+    gasWei: req.body.gasWei || 0,
+    feeEstimate: req.body.feeEstimate || 0,
+    usdtInitial: req.body.usdtInitial || 0,
+    profitSell: req.body.profitSell || 0,
+    amountSell: req.body.amountSell || 0,
+    quantityToken: req.body.quantityToken || 0,
+    slippage: req.body.slippage || 0,
+    percentageToSell: req.body.percentageToSell || 0,
+    maxGasLimit: req.body.maxGasLimit || 0
+  }
+  const config = await Config.c_setTrade(params);
+  return res.send({
+    statusText: 'OK',
+    data: {
+      config
+    }
+  });
+});
+
+app.get('/auto-sell', async (req, res) => {
+  // Your logic here
+  const { privateKey, httpRpc } = req.body;
+  const wallet = await Wallet.wl_Load(privateKey, httpRpc);
+  const balance = await Wallet.wl_getBalance();
+  return res.send({
+    data: 'OK',
+    wallet,
+    balance
+  });
+});
+
+
+app.get('/manual-sell', async (req, res) => {
+  // Your logic here
+  const { privateKey, httpRpc } = req.body;
+  const wallet = await Wallet.wl_Load(privateKey, httpRpc);
+  const balance = await Wallet.wl_getBalance();
+  return res.send({
+    statusText: 'OK',
+    data: {
+      wallet,
+      balance
+    }
+  });
+});
+
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
+
+app.listen(2705, () => {
+  console.log('Server is listening on port 2705');
+});
 
 io.on("connection", function (socket) {
-  console.log("------- Made socket connection -----");
 
   // check token
   socket.on('check_h_Token', async function (params) {
@@ -50,21 +163,6 @@ io.on("connection", function (socket) {
   // check mint token (block)
   socket.on('check_h_getMint', async function (params) {
     await app_checkMint(socket, params);
-  });
-
-  // save setting wallet
-  socket.on('add_envWallet', async function (params) {
-    await app_setEnvWallet(socket, params);
-  });
-
-  // Get wallet info
-  socket.on('get_envWallet', async function (params) {
-    
-  });
-
-  // sell token manual
-  socket.on('trade_h_sellTokenManual', async function (params) {
-    await trade_h_sellTokenManual(socket, params);
   });
 
 });
@@ -102,81 +200,5 @@ async function app_checkMint(socket, params) {
     await PcSwapPair.p_checkMintEvent(pair.id);
   } catch (error) {
     console.log('[app_checkMint]: ', error);
-  }
-}
-
-// set wallet
-async function app_setEnvWallet(socket, params) {
-  try {
-    const query = JSON.parse(params || '');
-    // check validate
-    const private_key = query.private_key;
-    let response = {
-      status: 200,
-      content: 'NG'
-    }
-    if (private_key) {
-      const result = await Wallet.wl_Load(private_key);
-      if (result) response.content = 'OK'
-    }
-    socket.emit('get_h_envWallet', JSON.stringify(response));
-  } catch (error) {
-    console.log('[app_setEnvWallet]: ', error);
-  }
-}
-
-// sell token manual
-async function trade_h_sellTokenManual(socket, params) {
-  try {
-    const query = JSON.parse(params || '');
-    // check validate
-    const gasPrice = query.gasPrice;
-    const gasLimit = query.gasLimit;
-    const fromToken = query.fromToken;
-    const percentageToSell = query.percentageToSell;
-    const slippageTolerance = query.slippageTolerance;
-    const toToken = query.toToken;
-
-    // get account
-    const wallet = Wallet.wl_Wallet();
-    if (wallet.account) {
-      await Trade.t_sellPercentageOfTokens(
-        wallet,
-        routerAddress = '0x10ED43C718714eb63d5aA57B78B54704E256024E',
-        gasPrice,
-        gasLimit,
-        fromToken,
-        percentageToSell,
-        slippageTolerance,
-        toToken,
-      )
-    }
-  } catch (error) {
-    console.log('[trade_h_sellTokenManual]: ', error);
-  }
-}
-
-// sell token manual
-async function trade_h_sellTokenAuto(socket, params) {
-  try {
-    // const query = JSON.parse(params || '');
-    // // check validate
-    // const gasPrice = query.gasPrice;
-    // const gasLimit = query.gasLimit;
-    // const fromToken = query.fromToken;
-    // const percentageToSell = query.percentageToSell;
-    // const slippageTolerance = query.slippageTolerance;
-    // const toToken = query.toToken;
-
-    const wallet = await Wallet.wl_Load('641b5ddacec781b69f347c84abe8b2c1b00487a71b15f5ac0530e359a5e2726d', 'https://bsc-dataseed.bnbchain.org');
-    const balance = await Wallet.wl_getBalance();
-  
-    const token = await Token.t_getBalance('0x55d398326f99059fF775485246999027B3197955', wallet.account);
-    Monitor.scheduleMonitor({
-      wallet,
-      canSell: true
-    })
-  } catch (error) {
-    console.log('[trade_Auto]: ', error);
   }
 }

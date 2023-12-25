@@ -4,6 +4,7 @@
 /*                                                 */
 /*=================================================*/
 
+const e = require('cors');
 const { Web3 } = require('web3');
 const Log = require('../functionality/log');
 class Wallet {
@@ -24,24 +25,28 @@ class Wallet {
     }
 
     async wl_Load(privateKey, httpRpc, accountIndex = 0) {
-        if (privateKey && httpRpc) {
-            try {
-                const web3 = new Web3(httpRpc);
-                // convert to hexadecimal
-                const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
-                web3.eth.accounts.wallet.add(account);
-                this.web3 = web3;
-                this.account = account;
-                this.network = await web3.eth.net.getId();
-                this.bnbBalance = parseFloat(await web3.eth.getBalance(account.address));
-                this.baseNonce = parseInt(await web3.eth.getTransactionCount(account.address));
-                this.privateKey = privateKey;
-                return this;
-            } catch (e) {
-                Log.error(`[Wallet::error] ${e}`);
-                return this;
-            }
-        }        
+        try {
+            if (privateKey && httpRpc) {
+                try {
+                    const web3 = new Web3(httpRpc);
+                    // convert to hexadecimal
+                    const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
+                    web3.eth.accounts.wallet.add(account);
+                    this.web3 = web3;
+                    this.account = account;
+                    this.network = await web3.eth.net.getId();
+                    this.bnbBalance = parseFloat(await web3.eth.getBalance(account.address));
+                    this.baseNonce = parseInt(await web3.eth.getTransactionCount(account.address));
+                    this.privateKey = privateKey;
+                    return this;
+                } catch (e) {
+                    Log.error(`[Wallet::error] ${e}`);
+                    return this;
+                }
+            }     
+        } catch (error) {
+            console.log('[wl_Load]', error);
+        }
     }
 
     wl_Wallet() {
@@ -51,8 +56,8 @@ class Wallet {
         return this.web3.utils.fromWei(await this.web3.eth.getBalance(this.account.address), 'ether');
     }
 
-    wl_getChainId() {
-        return this.network;
+    async wl_getChainId() {
+        return (await this.web3.eth.getChainId()).toString();
     }
 
     wl_getPrivateKey() {

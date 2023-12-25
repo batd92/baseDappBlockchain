@@ -48,7 +48,7 @@ class Monitor extends EventEmitter {
             while (this.running) {
                 await sleep(500);
                 // Get token in wallet
-                let outputAmount = await Token.t_getBalance('0x55d398326f99059fF775485246999027B3197955', this.wallet.account);
+                let outputAmount = await Token.t_getBalance('0xEC5dCb5Dbf4B114C9d0F65BcCAb49EC54F6A0867', this.wallet.account);
                 let bnb = await this.wallet.wl_getBalance();
                 console.clear();
                 Log.primary('Đang quét ví .... ');
