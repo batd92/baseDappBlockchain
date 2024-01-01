@@ -76,8 +76,8 @@ async function h_getPrice(reserves, token0, token1, slippageTolerance = 0.5) {
             const _reserve0 = Number(reserves[0] / BigInt(10n ** BigInt(token0.decimals)));
             const _reserve1 = Number(reserves[1] / BigInt(10n ** BigInt(token1.decimals)));
             const dateTime = new Date(reserves[2].toString() * 1000).toLocaleString();
-            const toRatio = (Number(_reserve1) / Number(_reserve0) * (1 + slippageTolerance / 100)).toFixed(18);
-            const fromRatio = (Number(_reserve0) / Number(_reserve1) * (1 + slippageTolerance / 100)).toFixed(18);
+            const toRatio = (Number(_reserve1) / Number(_reserve0) * (1 + slippageTolerance / 100)).toFixed(3);
+            const fromRatio = (Number(_reserve0) / Number(_reserve1) * (1 + slippageTolerance / 100)).toFixed(3);
 
             console.log(`DateTime: ${dateTime}: ${token0.name} to ${token1.name} Ratio: ${toRatio}`);
             console.log(`DateTime: ${dateTime}: ${token1.name} to ${token0.name} Ratio: ${fromRatio}`);
@@ -138,6 +138,18 @@ async function h_isPairAddress(pair) {
     }
     return true;
 }
+
+/**
+ * Wrap Token
+ * @param {*} pair 
+ * @returns 
+ */
+async function h_getWrapToken(typeWrap = 'BNB') {
+    if (typeWrap === 'BNB') {
+        return '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
+    }
+}
+
 module.exports = {
     h_getTokenByAddress,
     h_getTokensPair,
@@ -146,5 +158,6 @@ module.exports = {
     h_loadTopPairsByGraphql,
     h_loadTokenByGraphql,
     h_checkAddress,
-    h_isPairAddress
+    h_isPairAddress,
+    h_getWrapToken
 }

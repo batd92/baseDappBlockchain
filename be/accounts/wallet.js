@@ -93,5 +93,9 @@ class Wallet {
     async wl_getGasPrice() {
         return await this.web3.eth.getGasPrice();
     }
+
+    async wl_calSwap() {
+        return '0';
+    }
 }
 module.exports = new Wallet();

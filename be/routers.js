@@ -1,0 +1,289 @@
+const express = require('express');
+const useRouter = express.Router();
+
+const PcSwapFactory = require('./functionality/factory');
+const PcSwapPair = require('./functionality/pair');
+const Helper = require('./functionality/helper');
+const Wallet = require('./accounts/wallet');
+const Config = require('./accounts/config');
+
+
+useRouter.post('/address', async function (req, res) {
+    const address = req.body.address;
+    const wrapToken = await Helper.h_getWrapToken(req.query.wrapToken || 'BNB');
+    if (address) {
+        console.log([wrapToken, address])
+        const pair = await PcSwapFactory.f_getPairs([wrapToken, address]);
+        if (pair) {
+            const reserves = await PcSwapPair.p_getReserves(pair.id);
+            const dex_swap = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
+            const { token0, token1 } = pair;
+    
+            return res.send({
+                statusText: 'OK',
+                data:             {
+                    dex_swap: {
+                        content: `${token0.symbol} ↔ ${token1.symbol}: ${dex_swap.fromRatio} ∗ ${token1.symbol} ↔ ${token0.symbol} ${dex_swap.toRatio}`,
+                    },
+                    smart_contract: pair,
+                }
+            })
+        } else {
+            return res.send({
+                statusText: 'NG',
+                data: {}
+            })
+        }
+    }
+});
+
+useRouter.get('/price', async function (req, res) {
+    const address = req.query.address;
+    const wrapToken = await Helper.h_getWrapToken(req.query.wrapToken || 'BNB');
+    if (address && wrapToken) {
+        const pair = await PcSwapFactory.f_getPairs([wrapToken, address]);
+        if (!pair) return res.send({
+            statusText: 'NG',
+            data: {} 
+        })
+        const reserves = await PcSwapPair.p_getReserves(pair.id);
+        const dex_swap = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
+        const { token0, token1 } = pair;
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                dex_swap: {
+                    content: `${token0.symbol} ↔ ${token1.symbol}: ${dex_swap.fromRatio} ∗ ${token1.symbol} ↔ ${token0.symbol} ${dex_swap.toRatio}`,
+                }
+            }
+        })
+    }
+});
+
+useRouter.get('/token-info', async function (req, res) {
+    const address = req.query.address;
+    const wrapToken = await Helper.h_getWrapToken(req.query.wrapToken || 'BNB');
+    if (address && wrapToken) {
+        const pair = await PcSwapFactory.f_getPairs([wrapToken, address]);
+        if (!pair) return res.send({
+            statusText: 'NG',
+            data: {} 
+        })
+        const reserves = await PcSwapPair.p_getReserves(pair.id);
+        const dex_swap = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
+        const { token0, token1 } = pair;
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                dex_swap: {
+                    content: `${token0.symbol} ↔ ${token1.symbol}: ${dex_swap.fromRatio} ∗ ${token1.symbol} ↔ ${token0.symbol} ${dex_swap.toRatio}`,
+                },
+                smart_contract: pair,
+            }
+        })
+    }
+});
+
+useRouter.get('/swap_settings', async function (req, res) {
+    const params = await Config.c_getParams('_swap');
+    if (params) {
+        const account = await Config.c_getParams('_private_key');
+        let myWallet;
+        if (account && account.private_key && account.my_address) {
+            const wallet = await Wallet.wl_calSwap();
+            myWallet = {
+                amountSell: 0,
+                feeEstimate: 0,
+                quantity: 0,
+                bnbInWallet: 0,
+                totalBnb: 0,
+                totalUsdt: 0
+            }
+
+        } else {
+            myWallet = {
+                amountSell: 0,
+                feeEstimate: 0,
+                quantity: 0,
+                bnbInWallet: 0,
+                totalBnb: 0,
+                totalUsdt: 0
+            }
+        }
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                swap_response: Object.assign(params, myWallet),
+            }
+        })
+    }
+});
+
+useRouter.post('/swap_settings', async function (req, res) {
+    const {
+        gasLimit,
+        gasWei,
+        amountSell,
+    } = req.body;
+
+    const params = await Config.c_setParams('_swap', {
+        amountSell: (+(amountSell) <= 0) ? process.env.AMOUNT_SWAP : +(amountSell),
+        gasLimit: (+(gasLimit) <= 0) ? process.env.GAS_LIMIT_SWAP : +(gasLimit),
+        gasWei: (+(gasWei) <= 0) ? process.env.GAS_PRICE_SWAP : +(gasWei)
+    });
+
+    if (params) {
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                swap_response: params
+            }
+        })
+    }
+    return res.send({
+        statusText: 'NG',
+        data: {}
+    })
+
+
+});
+
+useRouter.get('/private_key', async function (req, res) {
+    const params = await Config.c_getParams('_private_key');
+    if (params && params.private_key && params.my_address) {
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                private_keys: [
+                    params
+                ],
+            }
+        })
+    }
+    return res.send({
+        statusText: 'NG',
+        data: {}
+    })
+});
+
+useRouter.post('/private_key', async function (req, res) {
+    const {
+        private_key,
+    } = req.body;
+
+    if (private_key) {
+        const id = Math.floor(Math.random() * 1000);
+        const params = await Config.c_setParams('_private_key', {
+            private_key: private_key || process.env.PRIVATE_KEY,
+            my_address: process.env.MY_ADDRESS || 'address testing',
+            id: id,
+            name: `private_key-${id}`
+        });
+    
+        if (params) {
+            return res.send({
+                statusText: 'OK',
+                data:
+                {
+                    private_key: params
+                }
+            })
+        }
+    } else {
+        return res.send({
+            statusText: 'NG',
+            data: {}
+        })
+    }
+});
+
+useRouter.get('/options', async function (req, res) {
+    const params = await Config.c_getParams('_options');
+    return res.send({
+        statusText: 'OK',
+        data:
+        {
+            options: params
+        }
+    });
+});
+
+useRouter.post('/options', async function (req, res) {
+    const {
+        isAutoGasFee,
+        numberTryMint,
+        numberTrySwap
+    } = req.body;
+
+    const params = await Config.c_setParams('_options', {
+        isAutoGasFee: (typeof isAutoGasFee === 'boolean') ? isAutoGasFee : true,
+        isMainnet: true,
+        numberTryMint: (+(numberTryMint) <= 0) ? process.env.NUMBER_TRY_MINT : +(numberTryMint),
+        numberTrySwap: (+(numberTrySwap) <= 0) ? process.env.NUMBER_TRY_SWAP : +(numberTrySwap)
+    });
+
+    if (params) {
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                options: params
+            }
+        })
+    }
+    return res.send({
+        statusText: 'NG',
+        data: {}
+    })
+});
+
+useRouter.get('/mint_settings', async function (req, res) {
+    const params = await Config.c_getParams('_mint');
+    return res.send({
+        statusText: 'OK',
+        data:
+        {
+            mint_response: params
+        }
+    })
+});
+
+useRouter.post('/mint_settings', async function (req, res) {
+    const {
+        gasLimit,
+        gasWei,
+        numberMint,
+    } = req.body;
+
+    const params = await Config.c_setParams('_mint', {
+        numberMint: (+(numberMint) <= 0) ? process.env.NUMBER_MINT : +(numberMint),
+        gasLimit: (+(gasLimit) <= 0) ? process.env.GAS_LIMIT_MINT : +(gasLimit),
+        gasWei: (+(gasWei) <= 0) ? process.env.GAS_PRICE_MINT : +(gasWei)
+    });
+
+    if (params) {
+        return res.send({
+            statusText: 'OK',
+            data:
+            {
+                mint_response: params
+            }
+        })
+    }
+    return res.send({
+        statusText: 'NG',
+        data: {}
+    })
+
+});
+
+useRouter.post('/actions', function (req, res) {
+    const method = req.body.method;
+
+});
+module.exports = useRouter;

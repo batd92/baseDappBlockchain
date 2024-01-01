@@ -27,13 +27,12 @@ async function f_getPairs(address) {
         // get info token'
         const { token0, token1 } = await Helper.h_getTokenByAddress(address);
         // find pair address
-        let pairAddress = JSON.parse(await r_getRedis(token0.address + token1.address)) || '';
+        let pairAddress = await r_getRedis(`${token0.address}${token1.address}`) || '';
         if (!pairAddress) {
             pairAddress = await factory_v2.methods.getPair(token0.address, token1.address).call();
-            h_isPairAddress
             if (!Helper.h_isPairAddress(pairAddress)) {
                 console.error(`Invalid pair address for ${coinList[i]} & ${config.coin}`);
-                return;
+                return null;
             }
             await r_setRedis(
                 `${token0.address}-${token1.address}`,

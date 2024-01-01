@@ -47,8 +47,10 @@ async function r_setRedis(key, value) {
             key,
             JSON.stringify(value)
         );
+        return value;
     } catch (err) {
         console.log('r_setRedis :', err);
+        return null;
     }
 }
 
