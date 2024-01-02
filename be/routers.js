@@ -4,24 +4,22 @@ const useRouter = express.Router();
 const PcSwapFactory = require('./functionality/factory');
 const PcSwapPair = require('./functionality/pair');
 const Helper = require('./functionality/helper');
-const Wallet = require('./accounts/wallet');
 const Config = require('./accounts/config');
-
+const Trade = require('./accounts/trade');
 
 useRouter.post('/address', async function (req, res) {
     const address = req.body.address;
     const wrapToken = await Helper.h_getWrapToken(req.query.wrapToken || 'BNB');
     if (address) {
-        console.log([wrapToken, address])
         const pair = await PcSwapFactory.f_getPairs([wrapToken, address]);
         if (pair) {
             const reserves = await PcSwapPair.p_getReserves(pair.id);
             const dex_swap = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
             const { token0, token1 } = pair;
-    
+            await Config.c_setParams('_token', pair.token1);
             return res.send({
                 statusText: 'OK',
-                data:             {
+                data: {
                     dex_swap: {
                         content: `${token0.symbol} ↔ ${token1.symbol}: ${dex_swap.fromRatio} ∗ ${token1.symbol} ↔ ${token0.symbol} ${dex_swap.toRatio}`,
                     },
@@ -44,7 +42,7 @@ useRouter.get('/price', async function (req, res) {
         const pair = await PcSwapFactory.f_getPairs([wrapToken, address]);
         if (!pair) return res.send({
             statusText: 'NG',
-            data: {} 
+            data: {}
         })
         const reserves = await PcSwapPair.p_getReserves(pair.id);
         const dex_swap = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
@@ -68,7 +66,7 @@ useRouter.get('/token-info', async function (req, res) {
         const pair = await PcSwapFactory.f_getPairs([wrapToken, address]);
         if (!pair) return res.send({
             statusText: 'NG',
-            data: {} 
+            data: {}
         })
         const reserves = await PcSwapPair.p_getReserves(pair.id);
         const dex_swap = await Helper.h_getPrice(reserves, pair.token0, pair.token1);
@@ -92,7 +90,6 @@ useRouter.get('/swap_settings', async function (req, res) {
         const account = await Config.c_getParams('_private_key');
         let myWallet;
         if (account && account.private_key && account.my_address) {
-            const wallet = await Wallet.wl_calSwap();
             myWallet = {
                 amountSell: 0,
                 feeEstimate: 0,
@@ -184,7 +181,7 @@ useRouter.post('/private_key', async function (req, res) {
             id: id,
             name: `private_key-${id}`
         });
-    
+
         if (params) {
             return res.send({
                 statusText: 'OK',
@@ -282,8 +279,101 @@ useRouter.post('/mint_settings', async function (req, res) {
 
 });
 
-useRouter.post('/actions', function (req, res) {
-    const method = req.body.method;
+useRouter.post('/action', async function (req, res) {
+    try {
+        const method = req.body.method;
+        if (method) {
+            const {
+                gasLimitSwap,
+                gasPriceSwap,
+                amountSell,
+                feeEstimate,
+                quantity,
+                bnbInWallet,
+                totalBnb,
+                totalUsdt,
+                gasLimitMint,
+                gasPriceMint,
+                numberMint,
+                isAutoGasFee,
+                numberTryMint,
+                numberTrySwap,
+                my_address,
+                slippageTolerance,
+                address,
+                name,
+                symbol,
+                decimals,
+                routerAddress,
+                amountBuy,
+            } = await Config.c_getParams('', true);
+            let rs;
+            switch (method) {
+                case 'mint':
+                    await Trade.t_mintToken({
+
+                    });
+                    break;
+                case 'buy':
+                    await Trade.t_buyToken({
+                        routerAddress,              /* router factory */
+                        address,                    /* address token need buy */
+                        amountBuy: 1,               /* amount BNB */
+                        slippageTolerance,          /* slippage (%) */
+                        gasPriceSwap,               /* gas price */
+                        gasLimitSwap,               /* gas limit */
+                        numberTrySwap,              /* number swap */
+                    });
+                    break;
+                case 'swap':
+                    await Trade.t_swapToken({
+                        routerAddress,              /* router factory */
+                        address,                    /* token address */
+                        amountSell,                 /* amount need sell (%) */
+                        slippageTolerance,          /* slippage (%) */
+                        gasLimitSwap,               /* gas limit */
+                        numberTrySwap,              /* number swap */
+                        isAutoGasFee                /* number swap */
+                    });
+                    break;
+                default:
+                    break;
+            }
+
+            return res.send({
+                statusText: 'OK',
+                data: rs
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        return res.send({
+            statusText: 'NG',
+            data: {}
+        })
+    }
+});
+
+useRouter.post('/reset', async function (req, res) {
+    try {
+        const reset = req.body.reset;
+        if (reset) {
+            await Config.c_setReset();
+            return res.send({
+                statusText: 'OK',
+                data: {
+                    reset: 'OK'
+                }
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        return res.send({
+            statusText: 'NG',
+            data: {}
+        })
+    }
 
 });
+
 module.exports = useRouter;

@@ -7,10 +7,13 @@
 const { Web3 } = require('web3');
 const Token = require("../functionality/token");
 const Router = require('../functionality/router');
+const Helper = require('./helper');
+const Wallet = require('../accounts/wallet');
 
 // spenderAddress -> địa chỉ router pancakeswap
 // yourTokenContractAddress -> địa chỉ token
-async function t_approveToken(Wallet, yourTokenContractAddress, spenderAddress = '0x10ED43C718714eb63d5aA57B78B54704E256024E') {
+
+async function t_approveToken(yourTokenContractAddress, spenderAddress = '0x10ED43C718714eb63d5aA57B78B54704E256024E') {
     const account = Wallet._getAccount();
     const contract = await Token.t_getTokenSmartContract(yourTokenContractAddress);
 
@@ -19,9 +22,9 @@ async function t_approveToken(Wallet, yourTokenContractAddress, spenderAddress =
     const approveTx = contract.methods.approve(spenderAddress, maxInt);
 
     const gas = await approveTx.estimateGas({ from: account.address });
-    const gasPrice = await Wallet.wl_getGasPrice();
+    const gasPrice = await Wallet.getGasPrice();
 
-    const signedTransaction = await Wallet.wl_signTransaction({
+    const signedTransaction = await Wallet.signTransaction({
         from: account.address,
         to: yourTokenContractAddress,
         gas,
@@ -29,41 +32,40 @@ async function t_approveToken(Wallet, yourTokenContractAddress, spenderAddress =
         data: approveTx.encodeABI(),
     });
 
-    const receipt = await Wallet.wl_sendSignedTransaction(signedTransaction.rawTransaction);
+    const receipt = await Wallet.sendSignedTransaction(signedTransaction.rawTransaction);
     console.log('Function [t_approveToken] : ', receipt);
 }
 
 /**
-* Buy Token
+* Buy Token (SupportingFeeOnTransferTokens)
 * @param {*} from 
 * @param {*} to 
 * @returns 
 */
-async function t_buyTokenSupportingFeeOnTransferTokens(
-    Wallet,
+async function t_buyToken(
     routerAddress,
     toToken,
     amountBNB,
     slippageTolerance,
-    _gasPrice,
-    _gasLimit
+    maxGasLimit,
+    numberTrySwap
 ) {
     try {
-        // Get the current account's nonce
-        const nonce = Wallet.wl_getNonce();
-        const account = Wallet.wl_getAccount();
+        // 1. Get nonce and account
+        const nonce = Wallet.getNonce();
+        const account = Wallet.getAccount();
 
-        // Calculate the minimum amount of tokens to receive based on slippage tolerance
+        // 2. Tính toán số lượng tối thiểu của token nhận được dựa trên slippage tolerance
         const amounts = await Router.r_getAmountsOut(
             web3Instance.utils.toWei(amountBNB.toString()),
-            ['0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', toToken]
+            [Helper.getTokenWrapByChain('BNB'), toToken]
         );
-        const amountOutMin = amounts[1].sub(amounts[1].mul(slippageTolerance).div(100));
+        const amountOutMin = amounts[1].sub(amounts[1].mul(+slippageTolerance).div(100));
 
-        // Define the buy parameters
-        const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
+        // 3. Set deadline
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 phút từ thời điểm hiện tại
 
-        // Build the transaction object
+        // 4. Transaction object
         const txObject = await Router.r_swapExactETHForTokensSupportingFeeOnTransferTokens(
             amountOutMin,
             [toToken],
@@ -71,34 +73,42 @@ async function t_buyTokenSupportingFeeOnTransferTokens(
             deadline
         );
 
-        const value = Web3.utils.toWei(amountBNB.toString());
-        const gasPrice = Web3.utils.toHex(_gasPrice);
-        const gasLimit = Web3.utils.toHex(_gasLimit);
+        // 5. Set gasPrice
+        const gasPrice = Web3.utils.toHex(await Wallet.getGasPrice());
 
-        // Estimate gas required for the transaction
-        const xs = await txObject.estimateGas({ from: account, value });
+        // 6. Estimate gas
+        const gasEstimate = await txObject.estimateGas({ from: account, value: Web3.utils.toWei(amountBNB.toString()) });
 
-        // Build the raw transaction
+        // 7. Set gasLimit
+        if (gasEstimate > maxGasLimit) {
+            const gasToAdd = gasEstimate - maxGasLimit;
+            gasLimit = Math.min(gasLimit + gasToAdd, maxGasLimit);
+        } else {
+            gasLimit = gasEstimate; // Tăng gasLimit lên bằng với gasEstimate
+        }
+        // 8. Transaction raw
         const rawTransaction = {
             nonce: Web3.utils.toHex(nonce),
             gasPrice,
             gasLimit,
             to: routerAddress,
             data: txObject.encodeABI(),
-            value,
-            chainId: Wallet.wl_getChainId(),
+            value: Web3.utils.toWei(amountBNB.toString()),
+            chainId: Wallet.getChainId(),
         };
 
-        // Sign the transaction
-        const signedTransaction = await Wallet.wl_signTransaction(rawTransaction);
+        // 9. Transaction sign
+        const signedTransaction = await Wallet.signTransaction(rawTransaction);
 
-        // Send the signed transaction
-        const receipt = await Wallet.wl_sendSignedTransaction(signedTransaction.rawTransaction);
+        // 10. Send transaction
+        const receipt = await Wallet.sendSignedTransaction(signedTransaction.rawTransaction);
+
+        // 11. Return transaction hash
         return receipt.transactionHash;
 
     } catch (error) {
-        console.error('Error during transaction:', error.message || error);
-        throw error; // Re-throw the error for external handling if needed
+        console.error('Lỗi trong quá trình giao dịch:', error.message || error);
+        throw error; // Ném lại lỗi để xử lý bên ngoài nếu cần
     }
 }
 
@@ -108,125 +118,108 @@ async function t_buyTokenSupportingFeeOnTransferTokens(
  * @param {*} to 
  * @returns 
  */
-async function t_sellPercentageOfTokens(
-    Wallet,
+async function t_swapToken(
     routerAddress,
-    fromToken,
     toToken,
     percentageToSell,
     slippageTolerance,
-    initialGasLimit = 10000,
     maxGasLimit,
-    _gasPrice,
-    _gasLimit
+    numberTrySwap,
+    isAutoGasFee
 ) {
     try {
-        // Get the current account's nonce
-        const nonce = Wallet.wl_getNonce();
-        const account = Wallet.wl_getAccount();
+        const nonce = Wallet.getNonce();
+        const account = Wallet.getAccount();
 
-        // Get the balance of the fromToken in the account's wallet
         const fromTokenBalance = await Router.r_balanceOf(account);
-        const originalTokenPrice = 100;
 
-        // Calculate the amount to sell as a percentage of the balance
         const amountToSell = (fromTokenBalance * percentageToSell) / 100;
-
-        // Kiểm tra xem có đủ token để bán không
         if (amountToSell > fromTokenBalance) {
             console.error('Không đủ token để bán');
             return;
         }
 
-        // Fetch the current token price from an API or other source
-        const currentTokenPrice = await fetchCurrentTokenPrice(); // Replace with your function to fetch the current token price
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 phút từ thời điểm hiện tại
+        const amountOutMin = amountToSell * (1 - slippageTolerance / 100);
 
-        // Check if currentTokenPrice is a valid number
-        if (isNaN(currentTokenPrice)) {
-            console.error('Invalid currentTokenPrice. Aborting sell.');
-            return null;
-        }
+        let transactionHash;
+        let retryCount = 0;
 
-        const currentValue = amountToSell * currentTokenPrice;
-        const originalValue = amountToSell * originalTokenPrice;
+        const gasPrice = Web3.utils.toHex(await Wallet.getGasPrice());
+        let gasLimit = Web3.utils.toHex(maxGasLimit);
 
-        if ((currentValue - originalValue) / originalValue >= 0.5) {
-            // Define the sell parameters
-            const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
-            const amountOutMin = amountToSell * (1 - slippageTolerance / 100); // Adjust based on your slippage tolerance
+        const txObject = await Router.r_swapExactTokensForTokens(
+            amountToSell,
+            amountOutMin,
+            [Helper.getTokenWrapByChain('BNB'), toToken],
+            account,
+            deadline
+        );
 
-            let transactionHash;
-            let retryCount = 0;
+        do {
+            // Estimate gas required for the transaction
+            const gasEstimate = await txObject.estimateGas({ from: account, gasPrice, gas: gasLimit });
 
-            do {
-                // Build the transaction object
-                const txObject = await Router.r_swapExactTokensForTokens(
-                    amountToSell,
-                    amountOutMin,
-                    [fromToken, toToken],
-                    account,
-                    deadline
-                );
-
-                const gasPrice = Web3.utils.toHex(_gasPrice);
-                const gasLimit = Web3.utils.toHex(_gasLimit);
-                // Estimate gas required for the transaction
-                const gasEstimate = await txObject.estimateGas({ from: account, gasPrice, gas: gasLimit });
-
-                // Check if the estimated gas limit
-                if (gasEstimate > maxGasLimit) {
-                    console.error('Gas estimate or gas price exceeds the specified maximums. Aborting transaction.');
-                    return;
-                }
-                // Build the raw transaction
-                const rawTransaction = {
-                    nonce: Web3.utils.toHex(nonce),
-                    gasPrice,
-                    gasLimit,
-                    to: routerAddress,
-                    data: txObject.encodeABI(),
-                    chainId: Wallet.wl_getChainId(),
-                };
-
-                try {
-                    // Sign the transaction
-                    const signedTransaction = await Wallet.wl_signTransaction(rawTransaction);
-
-                    // Send the signed transaction
-                    const receipt = await Wallet.wl_sendSignedTransaction(signedTransaction.rawTransaction);
-                    transactionHash = receipt.transactionHash;
-                } catch (error) {
-                    if (error.message && error.message.includes('out of gas') && retryCount < 3) {
-                        // Handle Out of Gas error and retry (up to 3 times)
-                        console.warn('Out of Gas. Retrying...');
-                        gasLimit *= 2; // Double the gas limit
-                        retryCount++;
-                    } else {
-                        // Handle other errors
-                        console.error('Error during transaction:', error.message || error);
-                        throw error; // Re-throw the error for external handling if needed
-                    }
-                }
-            } while (!transactionHash && gasLimit <= maxGasLimit);
-
-            if (!transactionHash) {
-                console.error('Transaction failed even with maximum gas limit.');
-                // Handle the case where the transaction fails even with the maximum gas limit
-                return;
+            // Check if the estimated gas limit exceeds the maximum limit
+            if (gasEstimate > maxGasLimit) {
+                const gasToAdd = gasEstimate - maxGasLimit;
+                gasLimit = Math.min(gasLimit + gasToAdd, maxGasLimit);
+            } else {
+                gasLimit = gasEstimate; // Tăng gasLimit lên bằng với gasEstimate
             }
 
-            // Transaction successful
-            console.log('Transaction successful. Transaction hash:', transactionHash);
+            const rawTransaction = {
+                nonce: Web3.utils.toHex(nonce),
+                gasPrice,
+                gasLimit,
+                to: routerAddress,
+                data: txObject.encodeABI(),
+                chainId: Wallet.getChainId(),
+            };
+
+            try {
+                const signedTransaction = await Wallet.signTransaction(rawTransaction);
+                const receipt = await Wallet.sendSignedTransaction(signedTransaction.rawTransaction);
+                transactionHash = receipt.transactionHash;
+            } catch (error) {
+                if (error.message && error.message.includes('out of gas') && retryCount < numberTrySwap) {
+                    console.warn('Hết gas. Đang thử lại...');
+                    if (isAutoGasFee) gasLimit *= 2;
+                    retryCount++;
+                } else {
+                    console.error('Lỗi trong quá trình giao dịch:', error.message || error);
+                    throw error;
+                }
+            }
+        } while (!transactionHash && gasLimit <= maxGasLimit);
+
+        if (!transactionHash) {
+            console.error('Giao dịch thất bại ngay cả với gas limit tối đa.');
+            return;
         }
 
+        console.log('Giao dịch thành công. Transaction hash:', transactionHash);
+
     } catch (error) {
-        console.error('Error during transaction:', error.message || error);
-        throw error; // Re-throw the error for external handling if needed
+        console.error('Lỗi trong quá trình giao dịch:', error.message || error);
+        throw error;
     }
+}
+
+/**
+ * Mint NFT
+ * @param {*} from 
+ * @param {*} to 
+ * @returns 
+ */
+async function t_mintToken(
+) {
+
 }
 
 module.exports = {
     t_approveToken,
-    t_buyTokenSupportingFeeOnTransferTokens,
-    t_sellPercentageOfTokens
+    t_buyToken,
+    t_swapToken,
+    t_mintToken
 }

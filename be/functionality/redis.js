@@ -54,7 +54,17 @@ async function r_setRedis(key, value) {
     }
 }
 
+async function r_delRedis(key) {
+    try {
+        await getRedisClient().del(key);
+    } catch (err) {
+        console.log('r_delRedis :', err);
+        return null;
+    }
+}
+
 module.exports = {
     r_setRedis,
     r_getRedis,
+    r_delRedis
 };

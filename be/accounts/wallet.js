@@ -4,27 +4,19 @@
 /*                                                 */
 /*=================================================*/
 
-const e = require('cors');
 const { Web3 } = require('web3');
 const Log = require('../functionality/log');
+const Config = require('./config');
 class Wallet {
     constructor() {
         if (!Wallet.instance) {
-            this.web3 = null;
-            this.account = null;
-            this.nonceOffset = 0;
-            this.network = null;
-            this.bnbBalance = null;
-            this.baseNonce = null;
-            this.firstBlock = -1;
-            this.privateKey = '';
-
+            this.Load('ef1f3e5df1dd5e3457596505cd44e203a3a43379e1f14b654b97a7333b889570', 'https://bsc-dataseed1.bnbchain.org').then();
             Wallet.instance = this
         }
         return Wallet.instance;
     }
 
-    async wl_Load(privateKey, httpRpc, accountIndex = 0) {
+    async Load(privateKey, httpRpc, accountIndex = 0) {
         try {
             if (privateKey && httpRpc) {
                 try {
@@ -49,53 +41,46 @@ class Wallet {
         }
     }
 
-    wl_Wallet() {
-        return this;
-    }
-    async wl_getBalance() {
+    async getBalance() {
         return this.web3.utils.fromWei(await this.web3.eth.getBalance(this.account.address), 'ether');
     }
 
-    async wl_getChainId() {
+    async getChainId() {
         return (await this.web3.eth.getChainId()).toString();
     }
 
-    wl_getPrivateKey() {
+    getPrivateKey() {
         return this.privateKey;
     }
 
-    wl_getAccount() {
+    getAccount() {
         return this.account;
     }
 
-    wl_getNonce() {
+    getNonce() {
         return this.baseNonce + this.nonceOffset++;
     }
 
     // The number of transactions sent from the given address.
-    async wl_tryNonce() {
+    async tryNonce() {
         this.baseNonce = parseInt(await this.web3.eth.getTransactionCount(this.account.address));
         this.nonceOffset = 0;
         this.firstBlock = -1;
     }
 
     // Sign the transaction
-    async wl_signTransaction(rawTransaction) {
+    async signTransaction(rawTransaction) {
         return await this.web3.eth.accounts.signTransaction(rawTransaction, this.privateKey);
     }
 
     // Send the signed transaction
-    async wl_sendSignedTransaction(signedTransaction) {
-        await await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+    async sendSignedTransaction(signedTransaction) {
+        await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
     }
 
     // Returns the current gas price oracle. The gas price is determined by the last few blocks median gas price.
-    async wl_getGasPrice() {
+    async getGasPrice() {
         return await this.web3.eth.getGasPrice();
-    }
-
-    async wl_calSwap() {
-        return '0';
     }
 }
 module.exports = new Wallet();
