@@ -18,3 +18,26 @@ https://github.com/pancakeswap/pancake-smart-contracts/blob/master/projects/exch
 
 https://docs.nodereal.io/reference/pancakeswap-graphql-api
 
+.env
+
+QUICK_NODE_WSS_PROVIDER=https://xxx
+QUICK_NODE_HTTP_PROVIDER=wss://xxx
+PRIVATE_KEY=xxx
+HTTP_RPC_ETH=https://eth.llamarpc.com
+HTTP_RPC_ABR=https://arbitrum.llamarpc.com
+HTTP_RPC_MATIC=https://polygon.llamarpc.com
+HTTP_RPC_BNB=https://bsc-dataseed1.bnbchain.org
+WSS_RPC_BNB=wss://bsc.publicnode.com
+HTTP_RPC_OP=https://optimism.api.onfinality.io/public
+NUMBER_TRY_MINT=1
+NUMBER_TRY_SWAP=1
+AUTO_GAS_FEE=true
+GAS_LIMIT_MINT=500000
+GAS_PRICE_SWAP=1000000
+AMOUNT_SWAP=50
+MY_ADDRESS=
+SLIPPAGE_TOLERANCE=0.2
+MAX_GAS_LIMIT_SWAP=5000000
+MAX_GAS_LIMIT_MINT=5000000
+ROUTER_PANCAKE=0x10ED43C718714eb63d5aA57B78B54704E256024E
+AMOUNT_BUY=1
